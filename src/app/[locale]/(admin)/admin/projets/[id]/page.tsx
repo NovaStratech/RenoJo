@@ -6,6 +6,7 @@ import { projectStatus } from "@/lib/db/schema";
 import { BUCKETS, createSignedUrl } from "@/lib/storage";
 import { formatDateTime, statusColors, statusLabel } from "@/lib/format";
 import StatusSelect from "./status-select";
+import ReplyForm from "./reply-form";
 
 export const dynamic = "force-dynamic";
 
@@ -216,6 +217,26 @@ export default async function AdminProjectDetailPage({
             ))}
           </ul>
         )}
+
+        <ReplyForm
+          locale={locale}
+          projectId={project.id}
+          labels={{
+            title:
+              locale === "fr" ? "Répondre au client" : "Reply to client",
+            placeholder:
+              locale === "fr"
+                ? "Écrivez votre message…"
+                : "Write your message…",
+            send: locale === "fr" ? "Envoyer" : "Send",
+            sent: locale === "fr" ? "Envoyé ✓" : "Sent ✓",
+            skipped:
+              locale === "fr"
+                ? "Enregistré (Postmark non configuré)"
+                : "Saved (Postmark not configured)",
+            error: locale === "fr" ? "Erreur" : "Error",
+          }}
+        />
       </section>
 
       <section className="space-y-3">
