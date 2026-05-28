@@ -16,11 +16,9 @@ const serverSchema = z.object({
   SUPABASE_SERVICE_ROLE_KEY: z.string().min(1),
   DATABASE_URL: z.string().min(1),
 
-  // Postmark
-  POSTMARK_SERVER_TOKEN: z.string().min(1).optional(),
-  POSTMARK_FROM_EMAIL: z.string().email().optional(),
-  POSTMARK_REPLY_DOMAIN: z.string().min(1).optional(),
-  POSTMARK_INBOUND_WEBHOOK_TOKEN: z.string().min(1).optional(),
+  // Resend (email)
+  RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_FROM_EMAIL: z.string().email().optional(),
 
   // OpenAI
   OPENAI_API_KEY: z.string().min(1).optional(),

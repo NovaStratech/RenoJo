@@ -199,8 +199,8 @@ export async function submitProjectRequest(
     console.error("[submitProjectRequest] client email failed", err);
   }
 
-  // Admin notification (only if admin email configured)
-  const adminEmail = env.POSTMARK_FROM_EMAIL; // simplest: notify the from-address inbox
+  // Admin notification (only if email configured)
+  const adminEmail = env.RESEND_FROM_EMAIL; // notify the sender inbox
   if (adminEmail) {
     try {
       const adminMail = adminNewProjectNotification({
