@@ -35,6 +35,9 @@ export default async function NewQuotePage({
     ? {
         catalogPick: "+ Depuis le catalogue…",
         addLine: "Nouvelle ligne",
+        aiPrefill: "Pré-remplir depuis photos",
+        aiPrefilling: "Analyse…",
+        aiError: "Erreur IA",
         description: "Description",
         qty: "Qté",
         unit: "Unité",
@@ -55,6 +58,9 @@ export default async function NewQuotePage({
     : {
         catalogPick: "+ From catalog…",
         addLine: "New line",
+        aiPrefill: "Prefill from photos",
+        aiPrefilling: "Analyzing…",
+        aiError: "AI error",
         description: "Description",
         qty: "Qty",
         unit: "Unit",

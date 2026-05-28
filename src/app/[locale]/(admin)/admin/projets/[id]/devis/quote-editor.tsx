@@ -2,6 +2,7 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { createQuoteDraft, updateQuoteDraft } from "./actions";
+import { aiSuggestQuoteLines } from "../ai-actions";
 import { computeQuoteTotals, type LineInput } from "@/lib/quotes/totals";
 
 export type CatalogItemLite = {
@@ -18,6 +19,9 @@ type Line = LineInput & { key: string };
 type Labels = {
   catalogPick: string;
   addLine: string;
+  aiPrefill: string;
+  aiPrefilling: string;
+  aiError: string;
   description: string;
   qty: string;
   unit: string;
@@ -83,6 +87,8 @@ export default function QuoteEditor({
   const [terms, setTerms] = useState(initialTerms ?? "");
   const [validUntil, setValidUntil] = useState(initialValidUntil ?? "");
   const [pending, startTransition] = useTransition();
+  const [aiPending, startAi] = useTransition();
+  const [aiError, setAiError] = useState<string | null>(null);
 
   const totals = useMemo(
     () => computeQuoteTotals(lines, rates),
@@ -263,6 +269,39 @@ export default function QuoteEditor({
           >
             + {labels.addLine}
           </button>
+          <button
+            type="button"
+            disabled={aiPending}
+            onClick={() => {
+              setAiError(null);
+              startAi(async () => {
+                const r = await aiSuggestQuoteLines(locale, projectId);
+                if (r.ok) {
+                  setLines((prev) => [
+                    ...prev.filter(
+                      (l) =>
+                        l.description.trim() ||
+                        l.quantity !== 1 ||
+                        l.unitPrice !== 0,
+                    ),
+                    ...r.data.map((l) => ({ ...l, key: newKey() })),
+                  ]);
+                } else {
+                  setAiError(
+                    r.error === "openai_not_configured"
+                      ? labels.aiError
+                      : labels.aiError,
+                  );
+                }
+              });
+            }}
+            className="text-sm px-3 py-1.5 rounded border border-border hover:bg-accent disabled:opacity-60"
+          >
+            {aiPending ? labels.aiPrefilling : `✨ ${labels.aiPrefill}`}
+          </button>
+          {aiError && (
+            <span className="text-xs text-red-700">{aiError}</span>
+          )}
         </div>
       </div>
 

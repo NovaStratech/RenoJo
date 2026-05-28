@@ -7,6 +7,7 @@ import { BUCKETS, createSignedUrl } from "@/lib/storage";
 import { formatDateTime, statusColors, statusLabel } from "@/lib/format";
 import StatusSelect from "./status-select";
 import ReplyForm from "./reply-form";
+import AIPanel from "./ai-panel";
 
 export const dynamic = "force-dynamic";
 
@@ -135,7 +136,27 @@ export default async function AdminProjectDetailPage({
             {locale === "fr" ? "Description" : "Description"}
           </h2>
           <p className="text-sm whitespace-pre-wrap">{project.description}</p>
-        </section>
+        
+
+      <AIPanel
+        locale={locale}
+        projectId={project.id}
+        labels={{
+          title: locale === "fr" ? "Assistant IA" : "AI Assistant",
+          draftReply:
+            locale === "fr" ? "Suggérer une réponse" : "Draft a reply",
+          summarize:
+            locale === "fr" ? "Résumer le projet" : "Summarize project",
+          loading: locale === "fr" ? "Génération…" : "Generating…",
+          error: locale === "fr" ? "Erreur" : "Error",
+          notConfigured:
+            locale === "fr"
+              ? "OpenAI non configuré (OPENAI_API_KEY manquant)."
+              : "OpenAI not configured (missing OPENAI_API_KEY).",
+          copy: locale === "fr" ? "Copier" : "Copy",
+          copied: locale === "fr" ? "Copié ✓" : "Copied ✓",
+        }}
+      /></section>
       )}
 
       <section className="space-y-3">
