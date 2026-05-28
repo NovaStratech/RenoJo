@@ -244,13 +244,12 @@ export default async function AdminProjectDetailPage({
           <h2 className="text-lg font-semibold">
             {locale === "fr" ? "Devis" : "Quotes"} ({quotes.length})
           </h2>
-          <button
-            disabled
-            className="text-xs px-3 py-1.5 rounded-md border border-border text-muted-foreground cursor-not-allowed"
-            title={locale === "fr" ? "Bientôt (Phase 5)" : "Coming soon"}
+          <a
+            href={`/${locale}/admin/projets/${project.id}/devis/nouveau`}
+            className="text-xs px-3 py-1.5 rounded-md bg-primary text-primary-foreground font-medium"
           >
             + {locale === "fr" ? "Nouveau devis" : "New quote"}
-          </button>
+          </a>
         </div>
         {quotes.length === 0 ? (
           <div className="text-sm text-muted-foreground">
@@ -259,17 +258,19 @@ export default async function AdminProjectDetailPage({
         ) : (
           <ul className="space-y-2">
             {quotes.map((q) => (
-              <li
-                key={q.id}
-                className="rounded-lg border border-border bg-card p-3 flex items-center justify-between"
-              >
-                <div>
-                  <div className="font-medium">{q.number}</div>
-                  <div className="text-xs text-muted-foreground">
-                    {q.status}
+              <li key={q.id}>
+                <a
+                  href={`/${locale}/admin/projets/${project.id}/devis/${q.id}`}
+                  className="rounded-lg border border-border bg-card p-3 flex items-center justify-between hover:bg-accent"
+                >
+                  <div>
+                    <div className="font-medium">{q.number}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {q.status}
+                    </div>
                   </div>
-                </div>
-                <div className="text-sm">{q.total} {q.currency}</div>
+                  <div className="text-sm">{q.total} {q.currency}</div>
+                </a>
               </li>
             ))}
           </ul>
