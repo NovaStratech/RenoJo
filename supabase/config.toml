@@ -1,0 +1,32 @@
+# Supabase project configuration (used by the Supabase CLI and the GitHub integration).
+# Generated for RenoJo. The full set of options can be added via `supabase init`.
+
+project_id = "renojo"
+
+[db]
+# Local-dev port; ignored by the hosted GitHub integration.
+port = 54322
+shadow_port = 54320
+major_version = 15
+
+[db.migrations]
+# Schemas to include when diffing local <-> remote. `public` is enough for our app tables.
+schema_paths = []
+
+[api]
+enabled = true
+port = 54321
+schemas = ["public", "storage", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[storage]
+enabled = true
+file_size_limit = "50MiB"
+
+[auth]
+enabled = true
+site_url = "http://localhost:3000"
+additional_redirect_urls = ["http://localhost:3000/**"]
+jwt_expiry = 3600
+enable_signup = false

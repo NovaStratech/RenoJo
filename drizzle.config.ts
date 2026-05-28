@@ -6,8 +6,14 @@ if (!process.env.DATABASE_URL) {
 
 export default defineConfig({
   schema: "./src/lib/db/schema.ts",
-  out: "./drizzle",
+  // Output migrations into Supabase's expected folder so the Supabase GitHub
+  // integration applies them automatically on merge to main.
+  out: "./supabase/migrations",
   dialect: "postgresql",
+  // Use Supabase-compatible filename format: <YYYYMMDDHHmmss>_<name>.sql
+  migrations: {
+    prefix: "supabase",
+  },
   dbCredentials: {
     url: process.env.DATABASE_URL ?? "postgres://invalid",
   },

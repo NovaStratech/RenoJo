@@ -40,7 +40,9 @@ src/
     db/                # schéma + client Drizzle
     supabase/          # client browser / server / service-role
 messages/              # fr.json, en.json
-drizzle/               # migrations générées
+supabase/
+  config.toml          # config Supabase (intégration GitHub)
+  migrations/          # SQL généré par Drizzle, appliqué auto par Supabase
 ```
 
 ## Scripts
@@ -49,9 +51,13 @@ drizzle/               # migrations générées
 - `npm run build` — build production
 - `npm run lint` — ESLint
 - `npm run format` — Prettier
-- `npm run db:generate` — génère une migration SQL depuis le schéma
-- `npm run db:push` — applique le schéma directement (dev rapide)
+- `npm run db:generate -- --name <nom>` — génère une migration SQL dans `supabase/migrations/`
+- `npm run db:push` — applique le schéma directement (dev rapide, sans migration file)
 - `npm run db:studio` — UI Drizzle Studio
+
+## Migrations & déploiement DB
+
+Les migrations Drizzle sont générées directement dans `supabase/migrations/` au format Supabase (`<timestamp>_<nom>.sql`). L'**intégration GitHub de Supabase** les applique automatiquement à chaque merge sur `main` — pas besoin de lancer `db:push` manuellement en production. Voir [supabase/README.md](supabase/README.md).
 
 ## État d'avancement
 
