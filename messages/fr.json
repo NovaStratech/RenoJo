@@ -1,0 +1,53 @@
+{
+  "common": {
+    "appName": "RenoJo",
+    "tagline": "Estimations de rénovation, simples et rapides",
+    "languageToggle": "EN",
+    "back": "Retour",
+    "next": "Suivant",
+    "submit": "Envoyer",
+    "cancel": "Annuler",
+    "save": "Enregistrer",
+    "loading": "Chargement…"
+  },
+  "landing": {
+    "heroTitle": "Obtenez une estimation pour vos travaux de rénovation",
+    "heroSubtitle": "Décrivez votre projet, ajoutez quelques photos, et recevez un devis personnalisé. Sans création de compte.",
+    "ctaRequest": "Demander une estimation",
+    "ctaAdmin": "Espace administrateur"
+  },
+  "request": {
+    "title": "Nouvelle demande d'estimation",
+    "stepContact": "Vos coordonnées",
+    "stepAddress": "Adresse du projet",
+    "stepProject": "Type de projet",
+    "stepDescription": "Description et photos",
+    "stepReview": "Vérification",
+    "fields": {
+      "fullName": "Nom complet",
+      "email": "Courriel",
+      "phone": "Téléphone",
+      "addressLine": "Adresse",
+      "city": "Ville",
+      "postalCode": "Code postal",
+      "projectType": "Type de projet",
+      "description": "Décrivez votre projet",
+      "photos": "Photos (facultatif)"
+    }
+  },
+  "admin": {
+    "dashboard": "Tableau de bord",
+    "projects": "Projets",
+    "catalog": "Catalogue",
+    "settings": "Paramètres",
+    "logout": "Déconnexion",
+    "login": {
+      "title": "Connexion administrateur",
+      "email": "Courriel",
+      "password": "Mot de passe",
+      "submit": "Se connecter",
+      "magicLink": "Recevoir un lien de connexion",
+      "error": "Identifiants invalides"
+    }
+  }
+}

@@ -1,0 +1,53 @@
+{
+  "common": {
+    "appName": "RenoJo",
+    "tagline": "Simple, fast renovation estimates",
+    "languageToggle": "FR",
+    "back": "Back",
+    "next": "Next",
+    "submit": "Submit",
+    "cancel": "Cancel",
+    "save": "Save",
+    "loading": "Loading…"
+  },
+  "landing": {
+    "heroTitle": "Get an estimate for your renovation project",
+    "heroSubtitle": "Describe your project, add a few photos, and receive a tailored quote. No account required.",
+    "ctaRequest": "Request an estimate",
+    "ctaAdmin": "Admin area"
+  },
+  "request": {
+    "title": "New estimate request",
+    "stepContact": "Your contact info",
+    "stepAddress": "Project address",
+    "stepProject": "Project type",
+    "stepDescription": "Description and photos",
+    "stepReview": "Review",
+    "fields": {
+      "fullName": "Full name",
+      "email": "Email",
+      "phone": "Phone",
+      "addressLine": "Street address",
+      "city": "City",
+      "postalCode": "Postal code",
+      "projectType": "Project type",
+      "description": "Describe your project",
+      "photos": "Photos (optional)"
+    }
+  },
+  "admin": {
+    "dashboard": "Dashboard",
+    "projects": "Projects",
+    "catalog": "Catalog",
+    "settings": "Settings",
+    "logout": "Sign out",
+    "login": {
+      "title": "Admin sign in",
+      "email": "Email",
+      "password": "Password",
+      "submit": "Sign in",
+      "magicLink": "Send me a magic link",
+      "error": "Invalid credentials"
+    }
+  }
+}
