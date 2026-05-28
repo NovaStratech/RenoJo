@@ -30,6 +30,7 @@ import { BUCKETS, createSignedUrl, uploadToBucket } from "@/lib/storage";
 import { renderQuotePdf } from "@/lib/pdf/render-quote";
 import { buildReplyToAddress, sendEmail } from "@/lib/email/postmark";
 import { appOrigin } from "@/lib/email/templates";
+import { recordAudit } from "@/lib/audit";
 
 const lineSchema = z.object({
   description: z.string().trim().min(1).max(2000),
@@ -356,6 +357,14 @@ ${pdfSignedUrl ? `<p style="font-size:12px;color:#777">${isFr ? "Téléchargemen
 
   revalidatePath(`/${locale}/admin/projets/${project.id}`);
   revalidatePath(`/${locale}/admin/projets/${project.id}/devis/${quoteId}`);
+  await recordAudit({
+    actorType: "admin",
+    actorId: admin?.id,
+    action: "quote.sent",
+    entity: "quote",
+    entityId: quoteId,
+    metadata: { number: qRow.number, total: qRow.total, to: client.email },
+  });
   return { ok: true, pdfPath: path };
 }
 
@@ -446,6 +455,14 @@ export async function acceptQuoteAction(
 
   revalidatePath(`/${locale}/projet/${token}`);
   revalidatePath(`/${locale}/projet/${token}/devis/${quoteId}`);
+  await recordAudit({
+    actorType: "client",
+    actorId: null,
+    action: "quote.accepted",
+    entity: "quote",
+    entityId: quoteId,
+    metadata: { signatureName, ip },
+  });
   return { ok: true };
 }
 
@@ -505,6 +522,13 @@ export async function convertQuoteToInvoice(
     qst: q.qst,
     total: q.total,
     currency: q.currency,
+  });
+  await recordAudit({
+    actorType: "admin",
+    action: "invoice.created_from_quote",
+    entity: "invoice",
+    entityId: quoteId,
+    metadata: { number, fromQuote: q.number },
   });
   revalidatePath(`/${locale}/admin/projets/${projectId}`);
 }

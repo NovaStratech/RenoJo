@@ -8,6 +8,7 @@ import { clients, messages, projects } from "@/lib/db/schema";
 import { requireAdmin, getCurrentUser } from "@/lib/auth/session";
 import { buildReplyToAddress, sendEmail } from "@/lib/email/postmark";
 import { adminReplyEmail, appOrigin } from "@/lib/email/templates";
+import { recordAudit } from "@/lib/audit";
 
 const replySchema = z.object({
   projectId: z.string().uuid(),
@@ -111,5 +112,13 @@ export async function sendReplyAction(
     .returning({ id: messages.id });
 
   revalidatePath(`/${locale}/admin/projets/${project.id}`);
+  await recordAudit({
+    actorType: "admin",
+    actorId: admin?.id,
+    action: "message.sent",
+    entity: "project",
+    entityId: project.id,
+    metadata: { messageId: inserted.id, to: client.email },
+  });
   return { ok: true, messageId: inserted.id, skipped: "skipped" in sent && sent.skipped };
 }

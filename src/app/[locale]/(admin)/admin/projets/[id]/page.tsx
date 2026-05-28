@@ -136,7 +136,8 @@ export default async function AdminProjectDetailPage({
             {locale === "fr" ? "Description" : "Description"}
           </h2>
           <p className="text-sm whitespace-pre-wrap">{project.description}</p>
-        
+        </section>
+      )}
 
       <AIPanel
         locale={locale}
@@ -156,8 +157,7 @@ export default async function AdminProjectDetailPage({
           copy: locale === "fr" ? "Copier" : "Copy",
           copied: locale === "fr" ? "Copié ✓" : "Copied ✓",
         }}
-      /></section>
-      )}
+      />
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">
