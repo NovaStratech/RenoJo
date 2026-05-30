@@ -1,6 +1,11 @@
 import { setRequestLocale, getTranslations } from "next-intl/server";
 import RequestForm from "./request-form";
 import type { Locale } from "@/i18n/routing";
+import { getCurrentUser, getClientForUser } from "@/lib/auth/session";
+
+// Reads the session cookie to prefill signed-in clients, so it cannot be
+// statically prerendered.
+export const dynamic = "force-dynamic";
 
 export default async function NouvelleDemandePage({
   params,
@@ -11,6 +16,19 @@ export default async function NouvelleDemandePage({
   setRequestLocale(locale);
   const t = await getTranslations("request");
   const tCommon = await getTranslations("common");
+
+  // If a client is already signed in, skip the contact/account step entirely
+  // and prefill their details.
+  const user = await getCurrentUser();
+  const client = user ? await getClientForUser(user.id) : null;
+  const prefill = client
+    ? {
+        loggedIn: true as const,
+        fullName: client.fullName,
+        email: client.email,
+        phone: client.phone ?? "",
+      }
+    : { loggedIn: false as const, fullName: "", email: "", phone: "" };
 
   const projectTypes =
     locale === "en"
@@ -105,6 +123,7 @@ export default async function NouvelleDemandePage({
       <h1 className="text-2xl sm:text-3xl font-bold mb-6">{t("title")}</h1>
       <RequestForm
         locale={locale}
+        prefill={prefill}
         labels={{
           title: t("title"),
           steps: {

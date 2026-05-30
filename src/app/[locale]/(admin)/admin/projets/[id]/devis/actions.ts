@@ -28,7 +28,7 @@ import {
 } from "@/lib/quotes/queries";
 import { BUCKETS, createSignedUrl, uploadToBucket } from "@/lib/storage";
 import { renderQuotePdf } from "@/lib/pdf/render-quote";
-import { buildReplyToAddress, sendEmail, type SendEmailResult } from "@/lib/email/postmark";
+import { buildReplyToAddress, sendEmail, DEFAULT_FROM, type SendEmailResult } from "@/lib/email/postmark";
 import { appOrigin } from "@/lib/email/templates";
 import { recordAudit } from "@/lib/audit";
 
@@ -316,23 +316,27 @@ ${pdfSignedUrl ? `<p style="font-size:12px;color:#777">${isFr ? "Téléchargemen
     skipped: true,
     reason: "platform_delivery",
   };
-  try {
-    sent = await sendEmail({
-      to: client.email,
-      subject,
-      textBody,
-      htmlBody,
-      replyTo,
-      attachments: [
-        {
-          Name: `${qRow.number}.pdf`,
-          Content: pdfBuffer.toString("base64"),
-          ContentType: "application/pdf",
-        },
-      ],
-    });
-  } catch (err) {
-    console.error("[sendQuote] email failed (continuing via platform)", err);
+  // Only email the client when they have quote notifications enabled.
+  if (client.notifyOnQuote) {
+    try {
+      sent = await sendEmail({
+        to: client.email,
+        from: DEFAULT_FROM,
+        subject,
+        textBody,
+        htmlBody,
+        replyTo,
+        attachments: [
+          {
+            Name: `${qRow.number}.pdf`,
+            Content: pdfBuffer.toString("base64"),
+            ContentType: "application/pdf",
+          },
+        ],
+      });
+    } catch (err) {
+      console.error("[sendQuote] email failed (continuing via platform)", err);
+    }
   }
 
   const admin = await getCurrentUser();

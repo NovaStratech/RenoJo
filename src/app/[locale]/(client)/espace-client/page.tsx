@@ -30,12 +30,20 @@ export default async function ClientDashboardPage({
               : "Track your requests and message us."}
           </p>
         </div>
-        <Link
-          href="/nouvelle-demande"
-          className="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
-        >
-          {locale === "fr" ? "Nouvelle demande" : "New request"}
-        </Link>
+        <div className="flex items-center gap-3">
+          <Link
+            href="/espace-client/parametres"
+            className="inline-flex items-center px-4 py-2 rounded-lg border border-border text-sm font-medium hover:bg-accent transition"
+          >
+            {locale === "fr" ? "Paramètres" : "Settings"}
+          </Link>
+          <Link
+            href="/nouvelle-demande"
+            className="inline-flex items-center px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:opacity-90 transition"
+          >
+            {locale === "fr" ? "Nouvelle demande" : "New request"}
+          </Link>
+        </div>
       </div>
 
       {projects.length === 0 ? (

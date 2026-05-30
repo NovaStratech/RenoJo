@@ -49,17 +49,38 @@ type Labels = {
 const STEPS = ["contact", "address", "project", "description", "review"] as const;
 type Step = (typeof STEPS)[number];
 
-export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; labels: Labels }) {
-  const [step, setStep] = useState<Step>("contact");
+type Prefill = {
+  loggedIn: boolean;
+  fullName: string;
+  email: string;
+  phone: string;
+};
+
+export default function RequestForm({
+  locale,
+  labels,
+  prefill = { loggedIn: false, fullName: "", email: "", phone: "" },
+}: {
+  locale: "fr" | "en";
+  labels: Labels;
+  prefill?: Prefill;
+}) {
+  const loggedIn = prefill.loggedIn;
+  // Signed-in clients don't re-enter contact details or create an account.
+  const steps = (loggedIn
+    ? ["address", "project", "description", "review"]
+    : ["contact", "address", "project", "description", "review"]) as Step[];
+
+  const [step, setStep] = useState<Step>(steps[0]);
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const [emailKnown, setEmailKnown] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoCompressing, startCompressing] = useTransition();
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [form, setForm] = useState({
-    fullName: "",
-    email: "",
-    phone: "",
+    fullName: prefill.fullName,
+    email: prefill.email,
+    phone: prefill.phone,
     addressLine: "",
     city: "",
     postalCode: "",
@@ -145,7 +166,7 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
       if (selectedTypes.length === 0) e.projectType = E.projectType;
     } else if (s === "description") {
       if (form.description.trim().length < 10) e.description = E.description;
-    } else if (s === "review") {
+    } else if (s === "review" && !loggedIn) {
       if (!form.password) e.password = E.passwordRequired;
       else if (form.password.length < 8) e.password = E.passwordMin;
       if (form.password !== form.passwordConfirm) e.passwordConfirm = E.passwordMatch;
@@ -153,13 +174,13 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     return e;
   }
 
-  const stepIdx = STEPS.indexOf(step);
+  const stepIdx = steps.indexOf(step);
 
   function goNext() {
-    if (stepIdx < STEPS.length - 1) setStep(STEPS[stepIdx + 1]);
+    if (stepIdx < steps.length - 1) setStep(steps[stepIdx + 1]);
   }
   function goBack() {
-    if (stepIdx > 0) setStep(STEPS[stepIdx - 1]);
+    if (stepIdx > 0) setStep(steps[stepIdx - 1]);
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -180,14 +201,14 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     }
     // Final submit: re-validate every step that has rules.
     const allErrs = {
-      ...validateStep("contact"),
+      ...(loggedIn ? {} : validateStep("contact")),
       ...validateStep("project"),
       ...validateStep("description"),
       ...validateStep("review"),
     };
     if (Object.keys(allErrs).length > 0) {
       setStepErrors(allErrs);
-      if (allErrs.fullName || allErrs.email) {
+      if (!loggedIn && (allErrs.fullName || allErrs.email)) {
         setStep("contact");
       } else if (allErrs.projectType) {
         setStep("project");
@@ -201,6 +222,7 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     // build FormData with photos
     const fd = new FormData();
     fd.append("locale", locale);
+    if (loggedIn) fd.append("loggedIn", "1");
     fd.append("projectType", selectedTypes.join(","));
     for (const [k, v] of Object.entries(form)) fd.append(k, v);
     for (const p of photos) fd.append("photos", p);
@@ -226,7 +248,7 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     <form onSubmit={handleSubmit} className="space-y-6">
       {/* Progress */}
       <ol className="flex gap-2 text-xs">
-        {STEPS.map((s, i) => (
+        {steps.map((s, i) => (
           <li
             key={s}
             className={`flex-1 h-1.5 rounded-full ${
@@ -511,34 +533,36 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
           <Review label={labels.fields.description} value={form.description} />
           <Review label={labels.fields.photos} value={`${photos.length}`} />
 
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4 !mt-6">
-            <div>
-              <p className="text-sm font-medium">{labels.fields.accountTitle}</p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {labels.fields.accountHint}
-              </p>
+          {!loggedIn && (
+            <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4 !mt-6">
+              <div>
+                <p className="text-sm font-medium">{labels.fields.accountTitle}</p>
+                <p className="text-xs text-muted-foreground mt-0.5">
+                  {labels.fields.accountHint}
+                </p>
+              </div>
+              <Field
+                label={labels.fields.password}
+                id="password"
+                type="password"
+                value={form.password}
+                onChange={(v) => update("password", v)}
+                autoComplete="new-password"
+                required
+                error={stepErrors.password}
+              />
+              <Field
+                label={labels.fields.passwordConfirm}
+                id="passwordConfirm"
+                type="password"
+                value={form.passwordConfirm}
+                onChange={(v) => update("passwordConfirm", v)}
+                autoComplete="new-password"
+                required
+                error={stepErrors.passwordConfirm}
+              />
             </div>
-            <Field
-              label={labels.fields.password}
-              id="password"
-              type="password"
-              value={form.password}
-              onChange={(v) => update("password", v)}
-              autoComplete="new-password"
-              required
-              error={stepErrors.password}
-            />
-            <Field
-              label={labels.fields.passwordConfirm}
-              id="passwordConfirm"
-              type="password"
-              value={form.passwordConfirm}
-              onChange={(v) => update("passwordConfirm", v)}
-              autoComplete="new-password"
-              required
-              error={stepErrors.passwordConfirm}
-            />
-          </div>
+          )}
         </div>
       )}
 

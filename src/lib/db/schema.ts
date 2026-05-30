@@ -87,6 +87,9 @@ export const clients = pgTable(
     phone: varchar("phone", { length: 40 }),
     authUserId: uuid("auth_user_id").unique(),
     locale: localeEnum("locale").notNull().default("fr"),
+    // Notification preferences (configurable from the client portal)
+    notifyOnMessage: boolean("notify_on_message").notNull().default(true),
+    notifyOnQuote: boolean("notify_on_quote").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },

@@ -9,6 +9,12 @@ import { getEnv } from "@/lib/env";
 
 let cachedClient: Resend | null | undefined;
 
+/**
+ * Resend's free shared sender. Works without a verified domain, so platform
+ * notifications can always reach the client's inbox.
+ */
+export const DEFAULT_FROM = "RenoJo <onboarding@resend.dev>";
+
 function getClient(): Resend | null {
   if (cachedClient !== undefined) return cachedClient;
   const env = getEnv();
@@ -51,7 +57,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     console.warn("[resend] skipped (not configured):", params.subject, "→", params.to);
     return { ok: true, messageId: null, skipped: true, reason: "resend_not_configured" };
   }
-  const from = params.from ?? env.RESEND_FROM_EMAIL;
+  const from = params.from ?? env.RESEND_FROM_EMAIL ?? DEFAULT_FROM;
   if (!from) {
     console.warn("[resend] skipped (no from address):", params.subject);
     return { ok: true, messageId: null, skipped: true, reason: "missing_from" };

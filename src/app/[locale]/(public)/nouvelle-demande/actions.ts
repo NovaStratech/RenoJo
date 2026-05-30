@@ -9,6 +9,7 @@ import { generateAccessToken, generateInboundKey } from "@/lib/auth/tokens";
 import { uploadToBucket, BUCKETS, randomFilename } from "@/lib/storage";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
+import { getCurrentUser, getClientForUser } from "@/lib/auth/session";
 
 const requestSchema = z.object({
   locale: z.enum(["fr", "en"]).default("fr"),
@@ -37,8 +38,8 @@ const requestSchema = z.object({
     .optional()
     .or(z.literal("")),
   description: z.string().trim().min(10).max(5000),
-  password: z.string().min(8).max(72),
-  passwordConfirm: z.string().min(1).max(72),
+  password: z.string().max(72).optional().or(z.literal("")),
+  passwordConfirm: z.string().max(72).optional().or(z.literal("")),
 });
 
 const MAX_PHOTOS = 12;
@@ -104,17 +105,32 @@ export async function submitProjectRequest(
     };
   }
   const data = parsed.data;
+  const fr = data.locale === "fr";
+  const loggedIn = formData.get("loggedIn") === "1";
 
-  if (data.password !== data.passwordConfirm) {
-    return {
-      status: "error",
-      message:
-        data.locale === "fr"
+  // Account credentials are only required when the visitor isn't already
+  // signed in. Signed-in clients reuse their session and skip this entirely.
+  if (!loggedIn) {
+    if (!data.password || data.password.length < 8) {
+      return {
+        status: "error",
+        message: fr
+          ? "Le mot de passe doit contenir au moins 8 caractères."
+          : "Password must be at least 8 characters.",
+        fieldErrors: { password: ["min"] },
+      };
+    }
+    if (data.password !== data.passwordConfirm) {
+      return {
+        status: "error",
+        message: fr
           ? "Les mots de passe ne correspondent pas."
           : "Passwords do not match.",
-      fieldErrors: { passwordConfirm: ["mismatch"] },
-    };
+        fieldErrors: { passwordConfirm: ["mismatch"] },
+      };
+    }
   }
+
   const photoEntries = formData.getAll("photos").filter((v): v is File => v instanceof File && v.size > 0);
   if (photoEntries.length > MAX_PHOTOS) {
     return { status: "error", message: `Maximum ${MAX_PHOTOS} photos.` };
@@ -128,107 +144,127 @@ export async function submitProjectRequest(
     }
   }
 
-  // Look up any existing client by email (email is the natural key).
-  const existingClient = await db
-    .select()
-    .from(clients)
-    .where(eq(clients.email, data.email))
-    .limit(1);
-
-  // Resolve the client portal account: sign in to an existing one, or create a
-  // new one — then establish a session so the visitor lands logged in.
-  const supabase = await createSupabaseServerClient();
-  const fr = data.locale === "fr";
-  let authUserId: string | null = existingClient[0]?.authUserId ?? null;
-
-  const wrongPasswordError = (): SubmitState => ({
-    status: "error",
-    message: fr
-      ? "Un compte existe déjà pour ce courriel. Mot de passe incorrect — réessayez ou connectez-vous."
-      : "An account already exists for this email. Wrong password — try again or sign in.",
-    fieldErrors: { password: ["wrong"] },
-  });
-
-  if (authUserId) {
-    // Existing linked account → authenticate with the provided password.
-    const { error: signErr } = await supabase.auth.signInWithPassword({
-      email: data.email,
-      password: data.password,
-    });
-    if (signErr) return wrongPasswordError();
-  } else {
-    // No linked account → try to create one.
-    const service = createSupabaseServiceClient();
-    const { data: created, error: createErr } =
-      await service.auth.admin.createUser({
-        email: data.email,
-        password: data.password,
-        email_confirm: true,
-      });
-    if (createErr || !created?.user) {
-      const alreadyExists = createErr?.message
-        ?.toLowerCase()
-        .includes("already");
-      if (!alreadyExists) {
-        return {
-          status: "error",
-          message: fr
-            ? "Impossible de créer le compte. Réessayez."
-            : "Could not create the account. Please try again.",
-          fieldErrors: { password: ["create_failed"] },
-        };
-      }
-      // An auth user exists but isn't linked yet → adopt it by signing in.
-      const { data: signInData, error: signErr } =
-        await supabase.auth.signInWithPassword({
-          email: data.email,
-          password: data.password,
-        });
-      if (signErr || !signInData.user) return wrongPasswordError();
-      authUserId = signInData.user.id;
-    } else {
-      authUserId = created.user.id;
-      // Sign the freshly created user in to establish the session cookie.
-      await supabase.auth.signInWithPassword({
-        email: data.email,
-        password: data.password,
-      });
-    }
-  }
-
-  // Generate magic token + inbound key
+  // Generate magic token + inbound key (used by the project either way).
   const { hash } = generateAccessToken();
   const inboundKey = generateInboundKey();
 
+  // Resolve the owning client.
+  let clientId: string;
+
+  if (loggedIn) {
+    // Reuse the authenticated client — no account creation, no contact re-entry.
+    const sessionUser = await getCurrentUser();
+    const sessionClient = sessionUser
+      ? await getClientForUser(sessionUser.id)
+      : null;
+    if (!sessionClient) {
+      redirect(`/${data.locale}/login`);
+    }
+    clientId = sessionClient.id;
+    // Project title uses the client's saved details.
+    if (data.phone && (data.phone || "") !== (sessionClient.phone ?? "")) {
+      await db
+        .update(clients)
+        .set({ phone: data.phone, updatedAt: new Date() })
+        .where(eq(clients.id, clientId));
+    }
+  } else {
+    // Look up any existing client by email (email is the natural key).
+    const existingClient = await db
+      .select()
+      .from(clients)
+      .where(eq(clients.email, data.email))
+      .limit(1);
+
+    // Resolve the client portal account: sign in to an existing one, or create
+    // a new one — then establish a session so the visitor lands logged in.
+    const supabase = await createSupabaseServerClient();
+    let authUserId: string | null = existingClient[0]?.authUserId ?? null;
+
+    const wrongPasswordError = (): SubmitState => ({
+      status: "error",
+      message: fr
+        ? "Un compte existe déjà pour ce courriel. Mot de passe incorrect — réessayez ou connectez-vous."
+        : "An account already exists for this email. Wrong password — try again or sign in.",
+      fieldErrors: { password: ["wrong"] },
+    });
+
+    if (authUserId) {
+      // Existing linked account → authenticate with the provided password.
+      const { error: signErr } = await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password!,
+      });
+      if (signErr) return wrongPasswordError();
+    } else {
+      // No linked account → try to create one.
+      const service = createSupabaseServiceClient();
+      const { data: created, error: createErr } =
+        await service.auth.admin.createUser({
+          email: data.email,
+          password: data.password!,
+          email_confirm: true,
+        });
+      if (createErr || !created?.user) {
+        const alreadyExists = createErr?.message
+          ?.toLowerCase()
+          .includes("already");
+        if (!alreadyExists) {
+          return {
+            status: "error",
+            message: fr
+              ? "Impossible de créer le compte. Réessayez."
+              : "Could not create the account. Please try again.",
+            fieldErrors: { password: ["create_failed"] },
+          };
+        }
+        // An auth user exists but isn't linked yet → adopt it by signing in.
+        const { data: signInData, error: signErr } =
+          await supabase.auth.signInWithPassword({
+            email: data.email,
+            password: data.password!,
+          });
+        if (signErr || !signInData.user) return wrongPasswordError();
+        authUserId = signInData.user.id;
+      } else {
+        authUserId = created.user.id;
+        // Sign the freshly created user in to establish the session cookie.
+        await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password!,
+        });
+      }
+    }
+
+    // Upsert client by email and ensure the auth link is set.
+    if (existingClient[0]) {
+      clientId = existingClient[0].id;
+      await db
+        .update(clients)
+        .set({
+          fullName: data.fullName,
+          phone: data.phone || existingClient[0].phone,
+          locale: data.locale,
+          authUserId,
+        })
+        .where(eq(clients.id, clientId));
+    } else {
+      const inserted = await db
+        .insert(clients)
+        .values({
+          fullName: data.fullName,
+          email: data.email,
+          phone: data.phone || null,
+          locale: data.locale,
+          authUserId,
+        })
+        .returning({ id: clients.id });
+      clientId = inserted[0].id;
+    }
+  }
+
   // Project title heuristic
   const projectTitle = buildProjectTitle(data.projectType, data.city);
-
-  // Upsert client by email and ensure the auth link is set.
-  let clientId: string;
-  if (existingClient[0]) {
-    clientId = existingClient[0].id;
-    await db
-      .update(clients)
-      .set({
-        fullName: data.fullName,
-        phone: data.phone || existingClient[0].phone,
-        locale: data.locale,
-        authUserId,
-      })
-      .where(eq(clients.id, clientId));
-  } else {
-    const inserted = await db
-      .insert(clients)
-      .values({
-        fullName: data.fullName,
-        email: data.email,
-        phone: data.phone || null,
-        locale: data.locale,
-        authUserId,
-      })
-      .returning({ id: clients.id });
-    clientId = inserted[0].id;
-  }
 
   // Create project
   const projectInsert = await db
