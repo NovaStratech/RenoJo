@@ -28,7 +28,7 @@ import {
 } from "@/lib/quotes/queries";
 import { BUCKETS, createSignedUrl, uploadToBucket } from "@/lib/storage";
 import { renderQuotePdf } from "@/lib/pdf/render-quote";
-import { buildReplyToAddress, sendEmail } from "@/lib/email/postmark";
+import { buildReplyToAddress, sendEmail, type SendEmailResult } from "@/lib/email/postmark";
 import { appOrigin } from "@/lib/email/templates";
 import { recordAudit } from "@/lib/audit";
 
@@ -307,20 +307,33 @@ ${pdfSignedUrl ? `<p style="font-size:12px;color:#777">${isFr ? "Téléchargemen
 </body></html>`;
 
   const replyTo = buildReplyToAddress(project.inboundKey) ?? undefined;
-  const sent = await sendEmail({
-    to: client.email,
-    subject,
-    textBody,
-    htmlBody,
-    replyTo,
-    attachments: [
-      {
-        Name: `${qRow.number}.pdf`,
-        Content: pdfBuffer.toString("base64"),
-        ContentType: "application/pdf",
-      },
-    ],
-  });
+  // Email is best-effort: the quote is delivered through the platform (the
+  // outbound message + "sent" status surface in the client portal). A Resend
+  // failure (e.g. unverified domain in test mode) must not block delivery.
+  let sent: SendEmailResult = {
+    ok: true,
+    messageId: null,
+    skipped: true,
+    reason: "platform_delivery",
+  };
+  try {
+    sent = await sendEmail({
+      to: client.email,
+      subject,
+      textBody,
+      htmlBody,
+      replyTo,
+      attachments: [
+        {
+          Name: `${qRow.number}.pdf`,
+          Content: pdfBuffer.toString("base64"),
+          ContentType: "application/pdf",
+        },
+      ],
+    });
+  } catch (err) {
+    console.error("[sendQuote] email failed (continuing via platform)", err);
+  }
 
   const admin = await getCurrentUser();
   // Persist outbound message

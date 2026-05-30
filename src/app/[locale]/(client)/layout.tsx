@@ -1,6 +1,7 @@
 import { requireClient } from "@/lib/auth/session";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { signOutAction } from "../(admin)/actions";
 
 export default async function ClientLayout({
@@ -17,7 +18,7 @@ export default async function ClientLayout({
   const signOut = signOutAction.bind(null, locale);
 
   return (
-    <div className="flex flex-col min-h-[calc(100vh-3.5rem)] bg-muted/20">
+    <div className="flex flex-col min-h-screen bg-muted/20">
       <header className="border-b border-border/60 px-6 h-14 flex items-center justify-between bg-card/70 backdrop-blur">
         <Link href="/espace-client" className="flex items-center gap-2">
           <span className="w-8 h-8 rounded-lg bg-primary/10 text-primary flex items-center justify-center font-bold">
@@ -31,6 +32,7 @@ export default async function ClientLayout({
           <span className="text-xs text-muted-foreground hidden sm:inline">
             {client.fullName}
           </span>
+          <LanguageSwitcher />
           <form action={signOut}>
             <button
               type="submit"

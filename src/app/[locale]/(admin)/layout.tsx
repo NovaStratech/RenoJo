@@ -1,6 +1,7 @@
 import { requireAdmin } from "@/lib/auth/session";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import AdminSidebar from "./_components/sidebar";
+import { LanguageSwitcher } from "@/components/language-switcher";
 import { signOutAction } from "./actions";
 
 export default async function AdminLayout({
@@ -25,7 +26,7 @@ export default async function AdminLayout({
   const signOut = signOutAction.bind(null, locale);
 
   return (
-    <div className="flex flex-1 min-h-[calc(100vh-3.5rem)] bg-muted/30">
+    <div className="flex flex-1 min-h-screen bg-muted/30">
       <AdminSidebar items={items} brand="RenoJo Admin" />
       <div className="flex-1 flex flex-col min-w-0">
         <header className="border-b border-border/60 px-6 h-12 flex items-center justify-between bg-card/60 backdrop-blur">
@@ -34,6 +35,7 @@ export default async function AdminLayout({
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground hidden sm:inline">{user.email}</span>
+            <LanguageSwitcher />
             <form action={signOut}>
               <button
                 type="submit"
