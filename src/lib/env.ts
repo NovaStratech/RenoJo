@@ -18,6 +18,15 @@ const optionalEmail = z.preprocess((v) => {
   return z.string().email().safeParse(trimmed).success ? trimmed : undefined;
 }, z.string().email().optional());
 
+/** Trim surrounding whitespace / newlines / quotes from a secret or URL.
+ *  Vercel env values sometimes carry a trailing "\n" which breaks HTTP headers. */
+const trimmed = (schema: z.ZodTypeAny) =>
+  z.preprocess((v) => {
+    if (typeof v !== "string") return v;
+    const t = v.trim().replace(/^["']|["']$/g, "");
+    return t === "" ? undefined : t;
+  }, schema);
+
 const serverSchema = z.object({
   APP_URL: z.string().url(),
   TOKEN_SECRET: z.string().min(32, "TOKEN_SECRET must be at least 32 characters"),
@@ -29,15 +38,15 @@ const serverSchema = z.object({
   DATABASE_URL: z.string().min(1),
 
   // Resend (email)
-  RESEND_API_KEY: z.string().min(1).optional(),
+  RESEND_API_KEY: trimmed(z.string().min(1).optional()),
   RESEND_FROM_EMAIL: optionalEmail,
   OWNER_EMAIL: optionalEmail,
 
   // OpenAI (or GitHub Models — set OPENAI_BASE_URL=https://models.github.ai/inference and OPENAI_API_KEY=<github_pat>)
-  OPENAI_API_KEY: z.string().min(1).optional(),
-  OPENAI_BASE_URL: z.string().url().optional(),
-  OPENAI_MODEL_TEXT: z.string().default("gpt-4o-mini"),
-  OPENAI_MODEL_VISION: z.string().default("gpt-4o"),
+  OPENAI_API_KEY: trimmed(z.string().min(1).optional()),
+  OPENAI_BASE_URL: trimmed(z.string().url().optional()),
+  OPENAI_MODEL_TEXT: trimmed(z.string()).pipe(z.string()).default("gpt-4o-mini"),
+  OPENAI_MODEL_VISION: trimmed(z.string()).pipe(z.string()).default("gpt-4o"),
 });
 
 export type ServerEnv = z.infer<typeof serverSchema>;
