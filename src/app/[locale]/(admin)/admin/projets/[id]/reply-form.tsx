@@ -1,7 +1,8 @@
 "use client";
 
-import { useActionState, useRef, useEffect } from "react";
+import { useActionState, useRef, useEffect, useState } from "react";
 import { sendReplyAction, type SendReplyState } from "./reply-actions";
+import { AIReviseButton } from "../../../_components/ai-revise-button";
 
 const initial: SendReplyState = { ok: false };
 
@@ -24,9 +25,13 @@ export default function ReplyForm({
   const action = sendReplyAction.bind(null, locale);
   const [state, formAction, pending] = useActionState(action, initial);
   const formRef = useRef<HTMLFormElement>(null);
+  const [body, setBody] = useState("");
 
   useEffect(() => {
-    if (state.ok && formRef.current) formRef.current.reset();
+    if (state.ok && formRef.current) {
+      formRef.current.reset();
+      setBody("");
+    }
   }, [state]);
 
   return (
@@ -35,14 +40,17 @@ export default function ReplyForm({
       action={formAction}
       className="rounded-lg border border-border bg-card p-4 space-y-3"
     >
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between gap-2">
         <h3 className="font-semibold">{labels.title}</h3>
+        <AIReviseButton locale={locale} text={body} kind="reply" onAccept={setBody} />
       </div>
       <input type="hidden" name="projectId" value={projectId} />
       <textarea
         name="body"
         required
         rows={5}
+        value={body}
+        onChange={(e) => setBody(e.target.value)}
         placeholder={labels.placeholder}
         className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
       />

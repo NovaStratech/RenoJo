@@ -299,3 +299,63 @@ ${catalogText || "(vide)"}`;
 
   return { ok: true, data: lines };
 }
+
+// ---------------------------------------------------------------------------
+// Revise free-form text (notes, terms, reply body) — corrige fautes,
+// améliore la formulation, conserve l'intention de l'auteur.
+// ---------------------------------------------------------------------------
+
+export type ReviseKind = "notes" | "terms" | "reply";
+
+function revisePrompts(locale: "fr" | "en", kind: ReviseKind) {
+  if (locale === "fr") {
+    const base =
+      "Tu es un assistant qui révise du texte écrit par un entrepreneur en rénovation. Corrige les fautes d'orthographe, de grammaire et de ponctuation. Améliore la formulation pour qu'elle soit claire et professionnelle, MAIS conserve strictement l'intention et le sens de l'auteur. N'ajoute pas d'information nouvelle. Garde la même langue (français). Réponds UNIQUEMENT avec le texte révisé, sans explication, sans guillemets, sans préambule.";
+    const flavour =
+      kind === "terms"
+        ? " Rends le ton plus formel, adapté à des conditions de devis."
+        : kind === "reply"
+          ? " Garde un ton courtois et chaleureux, adapté à un échange par courriel avec un client."
+          : " Garde un ton informatif et neutre, adapté à des notes de devis.";
+    return base + flavour;
+  }
+  const base =
+    "You revise text written by a renovation contractor. Fix spelling, grammar and punctuation. Improve clarity and professionalism BUT strictly preserve the author's intent and meaning. Do not add new information. Keep the same language (English). Reply ONLY with the revised text — no explanation, no quotes, no preamble.";
+  const flavour =
+    kind === "terms"
+      ? " Use a more formal tone suitable for quote terms and conditions."
+      : kind === "reply"
+        ? " Keep a polite and warm tone suitable for an email to a client."
+        : " Keep an informative, neutral tone suitable for quote notes.";
+  return base + flavour;
+}
+
+export async function reviseText(
+  text: string,
+  locale: "fr" | "en" = "fr",
+  kind: ReviseKind = "notes",
+): Promise<AIResult<string>> {
+  const trimmed = (text ?? "").trim();
+  if (!trimmed) return { ok: false, error: "empty_text" };
+  if (trimmed.length > 8000) return { ok: false, error: "text_too_long" };
+
+  const ai = getOpenAI();
+  if (!ai) return { ok: false, error: "openai_not_configured" };
+
+  try {
+    const completion = await ai.chat.completions.create({
+      model: getTextModel(),
+      messages: [
+        { role: "system", content: revisePrompts(locale, kind) },
+        { role: "user", content: trimmed },
+      ],
+      temperature: 0.3,
+      max_tokens: 1200,
+    });
+    const revised = (completion.choices[0]?.message?.content ?? "").trim();
+    if (!revised) return { ok: false, error: "empty_response" };
+    return { ok: true, data: revised };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "ai_error" };
+  }
+}

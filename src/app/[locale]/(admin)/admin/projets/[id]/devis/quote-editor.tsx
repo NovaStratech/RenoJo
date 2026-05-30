@@ -3,6 +3,7 @@
 import { useMemo, useState, useTransition } from "react";
 import { createQuoteDraft, updateQuoteDraft } from "./actions";
 import { aiSuggestQuoteLines } from "../ai-actions";
+import { AIReviseButton } from "../../../../_components/ai-revise-button";
 import { computeQuoteTotals, type LineInput } from "@/lib/quotes/totals";
 
 export type CatalogItemLite = {
@@ -307,24 +308,34 @@ export default function QuoteEditor({
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="md:col-span-2 space-y-3">
-          <label className="block text-xs font-medium text-muted-foreground">
-            {labels.notes}
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <label className="block text-xs font-medium text-muted-foreground">
+                {labels.notes}
+              </label>
+              <AIReviseButton locale={locale} text={notes} kind="notes" onAccept={setNotes} />
+            </div>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
               rows={3}
-              className="mt-1 w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
             />
-          </label>
-          <label className="block text-xs font-medium text-muted-foreground">
-            {labels.terms}
+          </div>
+          <div className="space-y-1">
+            <div className="flex items-center justify-between gap-2">
+              <label className="block text-xs font-medium text-muted-foreground">
+                {labels.terms}
+              </label>
+              <AIReviseButton locale={locale} text={terms} kind="terms" onAccept={setTerms} />
+            </div>
             <textarea
               value={terms}
               onChange={(e) => setTerms(e.target.value)}
               rows={3}
-              className="mt-1 w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
+              className="w-full px-3 py-2 rounded-md border border-input bg-background text-sm"
             />
-          </label>
+          </div>
           <label className="block text-xs font-medium text-muted-foreground">
             {labels.validUntil}
             <input

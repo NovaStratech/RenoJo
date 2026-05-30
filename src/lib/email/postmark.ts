@@ -63,7 +63,7 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
     subject: params.subject,
     text: params.textBody,
     html: params.htmlBody,
-    replyTo: params.replyTo,
+    replyTo: params.replyTo ?? env.OWNER_EMAIL,
     headers: params.headers,
     attachments: params.attachments?.map((a) => ({
       filename: a.Name,
@@ -80,9 +80,9 @@ export async function sendEmail(params: SendEmailParams): Promise<SendEmailResul
 
 /**
  * Build a reply-to address. Without an inbound service we fall back to the
- * admin FROM address so replies land in Joe's inbox rather than being lost.
+ * owner email (so replies land in Joe's Gmail) or the admin FROM address.
  */
 export function buildReplyToAddress(_inboundKey: string): string | null {
   const env = getEnv();
-  return env.RESEND_FROM_EMAIL ?? null;
+  return env.OWNER_EMAIL ?? env.RESEND_FROM_EMAIL ?? null;
 }

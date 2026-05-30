@@ -10,7 +10,10 @@ export function getOpenAI(): OpenAI | null {
     cached = null;
     return null;
   }
-  cached = new OpenAI({ apiKey: env.OPENAI_API_KEY });
+  cached = new OpenAI({
+    apiKey: env.OPENAI_API_KEY,
+    baseURL: env.OPENAI_BASE_URL,
+  });
   return cached;
 }
 

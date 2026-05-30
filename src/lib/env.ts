@@ -19,9 +19,11 @@ const serverSchema = z.object({
   // Resend (email)
   RESEND_API_KEY: z.string().min(1).optional(),
   RESEND_FROM_EMAIL: z.string().email().optional(),
+  OWNER_EMAIL: z.string().email().optional(),
 
-  // OpenAI
+  // OpenAI (or GitHub Models — set OPENAI_BASE_URL=https://models.github.ai/inference and OPENAI_API_KEY=<github_pat>)
   OPENAI_API_KEY: z.string().min(1).optional(),
+  OPENAI_BASE_URL: z.string().url().optional(),
   OPENAI_MODEL_TEXT: z.string().default("gpt-4o-mini"),
   OPENAI_MODEL_VISION: z.string().default("gpt-4o"),
 });

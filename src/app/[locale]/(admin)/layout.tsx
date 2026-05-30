@@ -25,19 +25,24 @@ export default async function AdminLayout({
   const signOut = signOutAction.bind(null, locale);
 
   return (
-    <div className="flex flex-1">
-      <AdminSidebar items={items} brand="RenoJo · Admin" />
-      <div className="flex-1 flex flex-col">
-        <header className="border-b border-border px-6 py-3 flex items-center justify-between bg-card">
-          <div className="text-sm text-muted-foreground">{user.email}</div>
-          <form action={signOut}>
-            <button
-              type="submit"
-              className="text-sm px-3 py-1.5 rounded-md border border-border hover:bg-accent"
-            >
-              {t("logout")}
-            </button>
-          </form>
+    <div className="flex flex-1 min-h-[calc(100vh-3.5rem)] bg-muted/30">
+      <AdminSidebar items={items} brand="RenoJo Admin" />
+      <div className="flex-1 flex flex-col min-w-0">
+        <header className="border-b border-border/60 px-6 h-12 flex items-center justify-between bg-card/60 backdrop-blur">
+          <div className="flex items-center gap-2 text-sm">
+            <span className="text-muted-foreground">{t("dashboard")}</span>
+          </div>
+          <div className="flex items-center gap-3">
+            <span className="text-xs text-muted-foreground hidden sm:inline">{user.email}</span>
+            <form action={signOut}>
+              <button
+                type="submit"
+                className="text-xs px-2.5 py-1.5 rounded-md border border-border hover:bg-accent transition"
+              >
+                {t("logout")}
+              </button>
+            </form>
+          </div>
         </header>
         <main className="flex-1">{children}</main>
       </div>

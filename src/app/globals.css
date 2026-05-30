@@ -1,51 +1,61 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 
-/* shadcn-style theme tokens for Tailwind v4 */
+/* RenoJo — forest green theme (OKLCH) */
 @layer base {
   :root {
-    --background: oklch(1 0 0);
-    --foreground: oklch(0.145 0 0);
+    --background: oklch(0.99 0.005 120);
+    --foreground: oklch(0.18 0.02 150);
     --card: oklch(1 0 0);
-    --card-foreground: oklch(0.145 0 0);
+    --card-foreground: oklch(0.18 0.02 150);
     --popover: oklch(1 0 0);
-    --popover-foreground: oklch(0.145 0 0);
-    --primary: oklch(0.205 0 0);
-    --primary-foreground: oklch(0.985 0 0);
-    --secondary: oklch(0.97 0 0);
-    --secondary-foreground: oklch(0.205 0 0);
-    --muted: oklch(0.97 0 0);
-    --muted-foreground: oklch(0.556 0 0);
-    --accent: oklch(0.97 0 0);
-    --accent-foreground: oklch(0.205 0 0);
-    --destructive: oklch(0.577 0.245 27.325);
-    --destructive-foreground: oklch(0.985 0 0);
-    --border: oklch(0.922 0 0);
-    --input: oklch(0.922 0 0);
-    --ring: oklch(0.708 0 0);
+    --popover-foreground: oklch(0.18 0.02 150);
+    /* forest green #15803d ≈ oklch(0.53 0.14 150) */
+    --primary: oklch(0.53 0.14 150);
+    --primary-foreground: oklch(0.99 0.01 150);
+    --secondary: oklch(0.96 0.015 150);
+    --secondary-foreground: oklch(0.25 0.04 150);
+    --muted: oklch(0.965 0.01 150);
+    --muted-foreground: oklch(0.5 0.02 150);
+    --accent: oklch(0.94 0.04 150);
+    --accent-foreground: oklch(0.25 0.06 150);
+    --destructive: oklch(0.6 0.22 27);
+    --destructive-foreground: oklch(0.99 0.01 27);
+    --success: oklch(0.62 0.16 150);
+    --success-foreground: oklch(0.99 0.01 150);
+    --warning: oklch(0.78 0.16 75);
+    --warning-foreground: oklch(0.25 0.05 75);
+    --border: oklch(0.9 0.015 150);
+    --input: oklch(0.92 0.012 150);
+    --ring: oklch(0.53 0.14 150 / 50%);
     --radius: 0.625rem;
   }
 
   .dark {
-    --background: oklch(0.145 0 0);
-    --foreground: oklch(0.985 0 0);
-    --card: oklch(0.205 0 0);
-    --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.205 0 0);
-    --popover-foreground: oklch(0.985 0 0);
-    --primary: oklch(0.922 0 0);
-    --primary-foreground: oklch(0.205 0 0);
-    --secondary: oklch(0.269 0 0);
-    --secondary-foreground: oklch(0.985 0 0);
-    --muted: oklch(0.269 0 0);
-    --muted-foreground: oklch(0.708 0 0);
-    --accent: oklch(0.269 0 0);
-    --accent-foreground: oklch(0.985 0 0);
-    --destructive: oklch(0.704 0.191 22.216);
-    --destructive-foreground: oklch(0.985 0 0);
+    --background: oklch(0.16 0.015 150);
+    --foreground: oklch(0.97 0.01 150);
+    --card: oklch(0.21 0.018 150);
+    --card-foreground: oklch(0.97 0.01 150);
+    --popover: oklch(0.21 0.018 150);
+    --popover-foreground: oklch(0.97 0.01 150);
+    /* lighter green for dark mode contrast */
+    --primary: oklch(0.7 0.16 150);
+    --primary-foreground: oklch(0.15 0.04 150);
+    --secondary: oklch(0.27 0.02 150);
+    --secondary-foreground: oklch(0.97 0.01 150);
+    --muted: oklch(0.27 0.02 150);
+    --muted-foreground: oklch(0.72 0.015 150);
+    --accent: oklch(0.3 0.04 150);
+    --accent-foreground: oklch(0.97 0.01 150);
+    --destructive: oklch(0.72 0.19 22);
+    --destructive-foreground: oklch(0.99 0.01 22);
+    --success: oklch(0.72 0.16 150);
+    --success-foreground: oklch(0.15 0.04 150);
+    --warning: oklch(0.82 0.15 75);
+    --warning-foreground: oklch(0.2 0.05 75);
     --border: oklch(1 0 0 / 10%);
-    --input: oklch(1 0 0 / 15%);
-    --ring: oklch(0.556 0 0);
+    --input: oklch(1 0 0 / 14%);
+    --ring: oklch(0.7 0.16 150 / 50%);
   }
 }
 
@@ -66,6 +76,10 @@
   --color-accent-foreground: var(--accent-foreground);
   --color-destructive: var(--destructive);
   --color-destructive-foreground: var(--destructive-foreground);
+  --color-success: var(--success);
+  --color-success-foreground: var(--success-foreground);
+  --color-warning: var(--warning);
+  --color-warning-foreground: var(--warning-foreground);
   --color-border: var(--border);
   --color-input: var(--input);
   --color-ring: var(--ring);
@@ -81,9 +95,23 @@
   * {
     border-color: var(--border);
   }
+  html {
+    color-scheme: light dark;
+  }
   body {
     background-color: var(--background);
     color: var(--foreground);
     font-family: var(--font-geist-sans), system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  /* Avoid flash of unstyled theme switch */
+  html.dark { color-scheme: dark; }
+}
+
+/* Subtle focus ring everywhere */
+@layer base {
+  :where(button, [role="button"], a, input, textarea, select):focus-visible {
+    outline: 2px solid var(--ring);
+    outline-offset: 2px;
   }
 }

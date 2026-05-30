@@ -3,8 +3,10 @@
 import { requireAdmin } from "@/lib/auth/session";
 import {
   draftReplyForProject,
+  reviseText,
   summarizeProject,
   suggestQuoteLines,
+  type ReviseKind,
   type SuggestedLine,
 } from "@/lib/ai/drafts";
 
@@ -34,4 +36,13 @@ export async function aiSuggestQuoteLines(
 ): Promise<AIActionResult<SuggestedLine[]>> {
   await requireAdmin(locale);
   return suggestQuoteLines(projectId, (locale as "fr" | "en") ?? "fr");
+}
+
+export async function aiReviseText(
+  locale: string,
+  text: string,
+  kind: ReviseKind = "notes",
+): Promise<AIActionResult<string>> {
+  await requireAdmin(locale);
+  return reviseText(text, (locale as "fr" | "en") ?? "fr", kind);
 }
