@@ -6,6 +6,18 @@ import { z } from "zod";
  * For client code, only `NEXT_PUBLIC_*` vars are accessible.
  */
 
+/**
+ * Optional email var that never crashes the app: trims the value and silently
+ * drops it (→ undefined) when empty or not a valid email. This avoids taking the
+ * whole portal down because of a stray space / quote in a Vercel env var.
+ */
+const optionalEmail = z.preprocess((v) => {
+  if (typeof v !== "string") return undefined;
+  const trimmed = v.trim().replace(/^["']|["']$/g, "");
+  if (!trimmed) return undefined;
+  return z.string().email().safeParse(trimmed).success ? trimmed : undefined;
+}, z.string().email().optional());
+
 const serverSchema = z.object({
   APP_URL: z.string().url(),
   TOKEN_SECRET: z.string().min(32, "TOKEN_SECRET must be at least 32 characters"),
@@ -18,8 +30,8 @@ const serverSchema = z.object({
 
   // Resend (email)
   RESEND_API_KEY: z.string().min(1).optional(),
-  RESEND_FROM_EMAIL: z.string().email().optional(),
-  OWNER_EMAIL: z.string().email().optional(),
+  RESEND_FROM_EMAIL: optionalEmail,
+  OWNER_EMAIL: optionalEmail,
 
   // OpenAI (or GitHub Models — set OPENAI_BASE_URL=https://models.github.ai/inference and OPENAI_API_KEY=<github_pat>)
   OPENAI_API_KEY: z.string().min(1).optional(),
