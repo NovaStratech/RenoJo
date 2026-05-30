@@ -1,7 +1,6 @@
 import { getTranslations } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { LanguageSwitcher } from "./language-switcher";
-import { ThemeToggle } from "./theme-toggle";
 
 export async function SiteHeader() {
   const t = await getTranslations("common");
@@ -16,7 +15,6 @@ export async function SiteHeader() {
         </Link>
         <div className="flex items-center gap-2">
           <LanguageSwitcher />
-          <ThemeToggle />
         </div>
       </div>
     </header>

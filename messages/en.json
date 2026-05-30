@@ -45,7 +45,7 @@
       "approxAreaHint": "e.g. 150",
       "optional": "optional",
       "accountTitle": "Create your client account",
-      "accountHint": "Choose a password to track your project and message us from your client portal.",
+      "accountHint": "Choose a password to access your client portal. If you already have an account with this email, enter your usual password to sign in.",
       "password": "Password",
       "passwordConfirm": "Confirm password"
     },

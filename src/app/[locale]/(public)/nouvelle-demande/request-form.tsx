@@ -121,13 +121,14 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     if (s === "contact") {
       if (form.fullName.trim().length < 2) e.fullName = E.fullName;
       if (!/.+@.+\..+/.test(form.email.trim())) e.email = E.email;
-      if (!form.password) e.password = E.passwordRequired;
-      else if (form.password.length < 8) e.password = E.passwordMin;
-      if (form.password !== form.passwordConfirm) e.passwordConfirm = E.passwordMatch;
     } else if (s === "project") {
       if (selectedTypes.length === 0) e.projectType = E.projectType;
     } else if (s === "description") {
       if (form.description.trim().length < 10) e.description = E.description;
+    } else if (s === "review") {
+      if (!form.password) e.password = E.passwordRequired;
+      else if (form.password.length < 8) e.password = E.passwordMin;
+      if (form.password !== form.passwordConfirm) e.passwordConfirm = E.passwordMatch;
     }
     return e;
   }
@@ -154,15 +155,18 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
       ...validateStep("contact"),
       ...validateStep("project"),
       ...validateStep("description"),
+      ...validateStep("review"),
     };
     if (Object.keys(allErrs).length > 0) {
       setStepErrors(allErrs);
-      if (allErrs.fullName || allErrs.email || allErrs.password || allErrs.passwordConfirm) {
+      if (allErrs.fullName || allErrs.email) {
         setStep("contact");
       } else if (allErrs.projectType) {
         setStep("project");
-      } else {
+      } else if (allErrs.description) {
         setStep("description");
+      } else {
+        setStep("review");
       }
       return;
     }
@@ -184,7 +188,11 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     return (state.status === "error" && state.fieldErrors?.[k]?.[0]) || undefined;
   };
   const accountExists =
-    state.status === "error" && Boolean(state.fieldErrors?.password?.includes("exists"));
+    state.status === "error" &&
+    Boolean(
+      state.fieldErrors?.password?.includes("exists") ||
+        state.fieldErrors?.password?.includes("wrong"),
+    );
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -231,43 +239,6 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
             onChange={(v) => update("phone", v)}
             autoComplete="tel"
           />
-
-          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
-            <div>
-              <p className="text-sm font-medium">
-                {labels.fields.accountTitle}
-              </p>
-              <p className="text-xs text-muted-foreground mt-0.5">
-                {labels.fields.accountHint}
-              </p>
-              <p className="text-xs text-muted-foreground mt-1">
-                {labels.alreadyHaveAccount}{" "}
-                <Link href="/login" className="underline font-medium text-foreground">
-                  {labels.errors.loginCta}
-                </Link>
-              </p>
-            </div>
-            <Field
-              label={labels.fields.password}
-              id="password"
-              type="password"
-              value={form.password}
-              onChange={(v) => update("password", v)}
-              autoComplete="new-password"
-              required
-              error={stepErrors.password}
-            />
-            <Field
-              label={labels.fields.passwordConfirm}
-              id="passwordConfirm"
-              type="password"
-              value={form.passwordConfirm}
-              onChange={(v) => update("passwordConfirm", v)}
-              autoComplete="new-password"
-              required
-              error={stepErrors.passwordConfirm}
-            />
-          </div>
         </div>
       )}
 
@@ -502,6 +473,35 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
           />
           <Review label={labels.fields.description} value={form.description} />
           <Review label={labels.fields.photos} value={`${photos.length}`} />
+
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4 !mt-6">
+            <div>
+              <p className="text-sm font-medium">{labels.fields.accountTitle}</p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {labels.fields.accountHint}
+              </p>
+            </div>
+            <Field
+              label={labels.fields.password}
+              id="password"
+              type="password"
+              value={form.password}
+              onChange={(v) => update("password", v)}
+              autoComplete="new-password"
+              required
+              error={stepErrors.password}
+            />
+            <Field
+              label={labels.fields.passwordConfirm}
+              id="passwordConfirm"
+              type="password"
+              value={form.passwordConfirm}
+              onChange={(v) => update("passwordConfirm", v)}
+              autoComplete="new-password"
+              required
+              error={stepErrors.passwordConfirm}
+            />
+          </div>
         </div>
       )}
 

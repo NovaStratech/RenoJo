@@ -45,7 +45,7 @@
       "approxAreaHint": "ex. 150",
       "optional": "facultatif",
       "accountTitle": "Créez votre compte client",
-      "accountHint": "Choisissez un mot de passe pour suivre votre projet et échanger avec nous depuis votre espace client.",
+      "accountHint": "Choisissez un mot de passe pour accéder à votre espace client. Si vous avez déjà un compte avec ce courriel, saisissez votre mot de passe habituel pour vous connecter.",
       "password": "Mot de passe",
       "passwordConfirm": "Confirmer le mot de passe"
     },

@@ -2,7 +2,6 @@ import { requireClient } from "@/lib/auth/session";
 import { setRequestLocale } from "next-intl/server";
 import { Link } from "@/i18n/navigation";
 import { signOutAction } from "../(admin)/actions";
-import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function ClientLayout({
   children,
@@ -32,7 +31,6 @@ export default async function ClientLayout({
           <span className="text-xs text-muted-foreground hidden sm:inline">
             {client.fullName}
           </span>
-          <ThemeToggle />
           <form action={signOut}>
             <button
               type="submit"

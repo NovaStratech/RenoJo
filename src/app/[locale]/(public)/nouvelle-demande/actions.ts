@@ -7,14 +7,8 @@ import { db } from "@/lib/db";
 import { clients, projects, projectPhotos } from "@/lib/db/schema";
 import { generateAccessToken, generateInboundKey } from "@/lib/auth/tokens";
 import { uploadToBucket, BUCKETS, randomFilename } from "@/lib/storage";
-import { sendEmail } from "@/lib/email/postmark";
 import { createSupabaseServiceClient } from "@/lib/supabase/admin";
-import {
-  appOrigin,
-  clientRequestReceived,
-  adminNewProjectNotification,
-} from "@/lib/email/templates";
-import { getEnv } from "@/lib/env";
+import { createSupabaseServerClient } from "@/lib/supabase/server";
 
 const requestSchema = z.object({
   locale: z.enum(["fr", "en"]).default("fr"),
@@ -141,36 +135,85 @@ export async function submitProjectRequest(
     .where(eq(clients.email, data.email))
     .limit(1);
 
-  // An account already exists → the visitor must sign in to submit the request.
-  if (existingClient[0]?.authUserId) {
-    return {
-      status: "error",
-      message:
-        data.locale === "fr"
-          ? "Un compte existe déjà pour ce courriel. Connectez-vous pour soumettre votre demande."
-          : "An account already exists for this email. Sign in to submit your request.",
-      fieldErrors: { password: ["exists"] },
-    };
+  // Resolve the client portal account: sign in to an existing one, or create a
+  // new one — then establish a session so the visitor lands logged in.
+  const supabase = await createSupabaseServerClient();
+  const fr = data.locale === "fr";
+  let authUserId: string | null = existingClient[0]?.authUserId ?? null;
+
+  const wrongPasswordError = (): SubmitState => ({
+    status: "error",
+    message: fr
+      ? "Un compte existe déjà pour ce courriel. Mot de passe incorrect — réessayez ou connectez-vous."
+      : "An account already exists for this email. Wrong password — try again or sign in.",
+    fieldErrors: { password: ["wrong"] },
+  });
+
+  if (authUserId) {
+    // Existing linked account → authenticate with the provided password.
+    const { error: signErr } = await supabase.auth.signInWithPassword({
+      email: data.email,
+      password: data.password,
+    });
+    if (signErr) return wrongPasswordError();
+  } else {
+    // No linked account → try to create one.
+    const service = createSupabaseServiceClient();
+    const { data: created, error: createErr } =
+      await service.auth.admin.createUser({
+        email: data.email,
+        password: data.password,
+        email_confirm: true,
+      });
+    if (createErr || !created?.user) {
+      const alreadyExists = createErr?.message
+        ?.toLowerCase()
+        .includes("already");
+      if (!alreadyExists) {
+        return {
+          status: "error",
+          message: fr
+            ? "Impossible de créer le compte. Réessayez."
+            : "Could not create the account. Please try again.",
+          fieldErrors: { password: ["create_failed"] },
+        };
+      }
+      // An auth user exists but isn't linked yet → adopt it by signing in.
+      const { data: signInData, error: signErr } =
+        await supabase.auth.signInWithPassword({
+          email: data.email,
+          password: data.password,
+        });
+      if (signErr || !signInData.user) return wrongPasswordError();
+      authUserId = signInData.user.id;
+    } else {
+      authUserId = created.user.id;
+      // Sign the freshly created user in to establish the session cookie.
+      await supabase.auth.signInWithPassword({
+        email: data.email,
+        password: data.password,
+      });
+    }
   }
 
   // Generate magic token + inbound key
-  const { token, hash } = generateAccessToken();
+  const { hash } = generateAccessToken();
   const inboundKey = generateInboundKey();
 
   // Project title heuristic
   const projectTitle = buildProjectTitle(data.projectType, data.city);
 
-  // Upsert client by email.
+  // Upsert client by email and ensure the auth link is set.
   let clientId: string;
   if (existingClient[0]) {
     clientId = existingClient[0].id;
-    // Refresh name/phone/locale if blank/changed
     await db
       .update(clients)
       .set({
         fullName: data.fullName,
         phone: data.phone || existingClient[0].phone,
         locale: data.locale,
+        authUserId,
       })
       .where(eq(clients.id, clientId));
   } else {
@@ -181,40 +224,10 @@ export async function submitProjectRequest(
         email: data.email,
         phone: data.phone || null,
         locale: data.locale,
+        authUserId,
       })
       .returning({ id: clients.id });
     clientId = inserted[0].id;
-  }
-
-  // Create the client portal account (password is mandatory) and link it.
-  {
-    const service = createSupabaseServiceClient();
-    const { data: created, error: createErr } =
-      await service.auth.admin.createUser({
-        email: data.email,
-        password: data.password,
-        email_confirm: true,
-      });
-    if (createErr || !created.user) {
-      const alreadyExists = createErr?.message
-        ?.toLowerCase()
-        .includes("already");
-      return {
-        status: "error",
-        message: alreadyExists
-          ? data.locale === "fr"
-            ? "Un compte existe déjà pour ce courriel. Connectez-vous pour soumettre votre demande."
-            : "An account already exists for this email. Sign in to submit your request."
-          : data.locale === "fr"
-            ? "Impossible de créer le compte. Réessayez."
-            : "Could not create the account. Please try again.",
-        fieldErrors: { password: [alreadyExists ? "exists" : "create_failed"] },
-      };
-    }
-    await db
-      .update(clients)
-      .set({ authUserId: created.user.id })
-      .where(eq(clients.id, clientId));
   }
 
   // Create project
@@ -260,51 +273,9 @@ export async function submitProjectRequest(
     }
   }
 
-  // Send emails (best-effort, never block submission)
-  const env = getEnv();
-  const accessUrl = `${appOrigin()}/${data.locale}/projet/${token}`;
-  const adminUrl = `${appOrigin()}/${data.locale}/admin/projets/${projectId}`;
-
-  try {
-    const clientMail = clientRequestReceived({
-      locale: data.locale,
-      clientName: data.fullName,
-      projectTitle,
-      accessUrl,
-    });
-    await sendEmail({
-      to: data.email,
-      subject: clientMail.subject,
-      textBody: clientMail.text,
-      htmlBody: clientMail.html,
-    });
-  } catch (err) {
-    console.error("[submitProjectRequest] client email failed", err);
-  }
-
-  // Admin notification (only if email configured)
-  const adminEmail = env.RESEND_FROM_EMAIL; // notify the sender inbox
-  if (adminEmail) {
-    try {
-      const adminMail = adminNewProjectNotification({
-        clientName: data.fullName,
-        clientEmail: data.email,
-        projectTitle,
-        adminUrl,
-      });
-      await sendEmail({
-        to: adminEmail,
-        subject: adminMail.subject,
-        textBody: adminMail.text,
-        htmlBody: adminMail.html,
-      });
-    } catch (err) {
-      console.error("[submitProjectRequest] admin email failed", err);
-    }
-  }
-
-  // Redirect to homepage with success flag
-  redirect(`/${data.locale}?submitted=1&token=${token}`);
+  // Communications happen inside the platform — the client is now signed in and
+  // lands on their portal where the new project (and messaging) is available.
+  redirect(`/${data.locale}/espace-client`);
 }
 
 function buildProjectTitle(projectType: string, city?: string): string {
