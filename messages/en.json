@@ -59,6 +59,7 @@
       "projectType": "Please select at least one project type.",
       "description": "Please describe your project (at least 10 characters).",
       "accountExists": "An account already exists for this email. Sign in to submit your request.",
+      "emailKnown": "You already have an account with this email. Sign in, or use a different email address.",
       "loginCta": "Sign in"
     }
   },

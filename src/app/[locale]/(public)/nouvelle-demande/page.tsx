@@ -165,6 +165,7 @@ export default async function NouvelleDemandePage({
             projectType: t("errors.projectType"),
             description: t("errors.description"),
             accountExists: t("errors.accountExists"),
+            emailKnown: t("errors.emailKnown"),
             loginCta: t("errors.loginCta"),
           },
         }}

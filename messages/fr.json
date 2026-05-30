@@ -59,6 +59,7 @@
       "projectType": "Veuillez sélectionner au moins un type de projet.",
       "description": "Veuillez décrire votre projet (au moins 10 caractères).",
       "accountExists": "Un compte existe déjà pour ce courriel. Connectez-vous pour soumettre votre demande.",
+      "emailKnown": "Vous avez déjà un compte avec ce courriel. Connectez-vous, ou utilisez une autre adresse courriel.",
       "loginCta": "Se connecter"
     }
   },

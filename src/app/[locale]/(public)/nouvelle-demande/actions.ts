@@ -298,3 +298,22 @@ function buildProjectTitle(projectType: string, city?: string): string {
       : types.map((t) => labels[t] ?? t).join(" + ");
   return city ? `${base} — ${city}` : base;
 }
+
+/**
+ * Lightweight check used by the contact step: tells the form whether the
+ * provided email already has a client account on the platform, so the visitor
+ * can be invited to sign in instead of starting a new request.
+ */
+export async function checkEmailAccount(
+  email: string,
+): Promise<{ exists: boolean }> {
+  const normalized = email.trim().toLowerCase();
+  if (!/.+@.+\..+/.test(normalized)) return { exists: false };
+  const rows = await db
+    .select({ authUserId: clients.authUserId })
+    .from(clients)
+    .where(eq(clients.email, normalized))
+    .limit(1);
+  return { exists: Boolean(rows[0]?.authUserId) };
+}
+

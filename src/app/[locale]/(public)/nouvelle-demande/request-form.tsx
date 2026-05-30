@@ -1,7 +1,7 @@
 "use client";
 
 import { useActionState, useState, useTransition } from "react";
-import { submitProjectRequest, type SubmitState } from "./actions";
+import { submitProjectRequest, checkEmailAccount, type SubmitState } from "./actions";
 import { Link } from "@/i18n/navigation";
 import imageCompression from "browser-image-compression";
 
@@ -40,6 +40,7 @@ type Labels = {
     projectType: string;
     description: string;
     accountExists: string;
+    emailKnown: string;
     loginCta: string;
   };
   alreadyHaveAccount: string;
@@ -51,6 +52,7 @@ type Step = (typeof STEPS)[number];
 export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; labels: Labels }) {
   const [step, setStep] = useState<Step>("contact");
   const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
+  const [emailKnown, setEmailKnown] = useState(false);
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoCompressing, startCompressing] = useTransition();
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -80,12 +82,30 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+    if (key === "email") setEmailKnown(false);
     setStepErrors((e) => {
       if (!e[key as string]) return e;
       const next = { ...e };
       delete next[key as string];
       return next;
     });
+  }
+
+  // Check whether the entered email already has an account on the platform.
+  // Returns true when the email is known (and blocks moving forward).
+  async function verifyEmail(): Promise<boolean> {
+    const email = form.email.trim();
+    if (!/.+@.+\..+/.test(email)) return false;
+    try {
+      const { exists } = await checkEmailAccount(email);
+      setEmailKnown(exists);
+      if (exists) {
+        setStepErrors((e) => ({ ...e, email: labels.errors.emailKnown }));
+      }
+      return exists;
+    } catch {
+      return false;
+    }
   }
 
   async function onFilesPicked(e: React.ChangeEvent<HTMLInputElement>) {
@@ -147,7 +167,15 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     if (step !== "review") {
       const errs = validateStep(step);
       setStepErrors(errs);
-      if (Object.keys(errs).length === 0) goNext();
+      if (Object.keys(errs).length > 0) return;
+      // On the contact step, also verify the email isn't already registered.
+      if (step === "contact") {
+        void verifyEmail().then((known) => {
+          if (!known) goNext();
+        });
+        return;
+      }
+      goNext();
       return;
     }
     // Final submit: re-validate every step that has rules.
@@ -227,10 +255,19 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
             type="email"
             value={form.email}
             onChange={(v) => update("email", v)}
+            onBlur={() => void verifyEmail()}
             autoComplete="email"
             required
             error={fieldError("email")}
           />
+          {emailKnown && (
+            <p className="-mt-2 text-xs text-muted-foreground">
+              {labels.errors.emailKnown}{" "}
+              <Link href="/login" className="underline font-medium text-foreground">
+                {labels.errors.loginCta}
+              </Link>
+            </p>
+          )}
           <Field
             label={labels.fields.phone}
             id="phone"
@@ -546,6 +583,7 @@ function Field({
   id,
   value,
   onChange,
+  onBlur,
   type = "text",
   required = false,
   autoComplete,
@@ -555,6 +593,7 @@ function Field({
   id: string;
   value: string;
   onChange: (v: string) => void;
+  onBlur?: () => void;
   type?: string;
   required?: boolean;
   autoComplete?: string;
@@ -572,6 +611,7 @@ function Field({
         autoComplete={autoComplete}
         value={value}
         onChange={(e) => onChange(e.target.value)}
+        onBlur={onBlur}
         className="w-full px-3 py-2 rounded-md border border-input bg-background"
       />
       {error && <p className="text-xs text-destructive mt-1">{error}</p>}
