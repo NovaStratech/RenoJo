@@ -48,6 +48,58 @@ export default async function NouvelleDemandePage({
           { value: "flexible", label: "Flexible" },
         ];
 
+  const budgets =
+    locale === "en"
+      ? [
+          { value: "under_5k", label: "Under $5k" },
+          { value: "5k_15k", label: "$5k – $15k" },
+          { value: "15k_30k", label: "$15k – $30k" },
+          { value: "30k_plus", label: "$30k+" },
+        ]
+      : [
+          { value: "under_5k", label: "Moins de 5 000 $" },
+          { value: "5k_15k", label: "5 000 – 15 000 $" },
+          { value: "15k_30k", label: "15 000 – 30 000 $" },
+          { value: "30k_plus", label: "30 000 $ et +" },
+        ];
+
+  const propertyTypes =
+    locale === "en"
+      ? [
+          { value: "house", label: "House" },
+          { value: "condo", label: "Condo / Apartment" },
+          { value: "commercial", label: "Commercial" },
+        ]
+      : [
+          { value: "house", label: "Maison" },
+          { value: "condo", label: "Condo / Appartement" },
+          { value: "commercial", label: "Commercial" },
+        ];
+
+  const occupancyStatuses =
+    locale === "en"
+      ? [
+          { value: "owner", label: "Owner" },
+          { value: "tenant", label: "Tenant" },
+        ]
+      : [
+          { value: "owner", label: "Propriétaire" },
+          { value: "tenant", label: "Locataire" },
+        ];
+
+  const preferredContacts =
+    locale === "en"
+      ? [
+          { value: "email", label: "Email" },
+          { value: "phone", label: "Phone" },
+          { value: "sms", label: "Text (SMS)" },
+        ]
+      : [
+          { value: "email", label: "Courriel" },
+          { value: "phone", label: "Téléphone" },
+          { value: "sms", label: "Texto (SMS)" },
+        ];
+
   return (
     <main className="flex-1 px-6 py-12 max-w-xl mx-auto w-full">
       <h1 className="text-2xl sm:text-3xl font-bold mb-6">{t("title")}</h1>
@@ -73,6 +125,19 @@ export default async function NouvelleDemandePage({
             description: t("fields.description"),
             descriptionHint: t("fields.descriptionHint"),
             photos: t("fields.photos"),
+            urgency: t("fields.urgency"),
+            budget: t("fields.budget"),
+            propertyType: t("fields.propertyType"),
+            occupancyStatus: t("fields.occupancyStatus"),
+            preferredContact: t("fields.preferredContact"),
+            desiredStartDate: t("fields.desiredStartDate"),
+            approxArea: t("fields.approxArea"),
+            approxAreaHint: t("fields.approxAreaHint"),
+            optional: t("fields.optional"),
+            accountTitle: t("fields.accountTitle"),
+            accountHint: t("fields.accountHint"),
+            password: t("fields.password"),
+            passwordConfirm: t("fields.passwordConfirm"),
           },
           buttons: {
             back: tCommon("back"),
@@ -84,6 +149,10 @@ export default async function NouvelleDemandePage({
           },
           projectTypes,
           urgencies,
+          budgets,
+          propertyTypes,
+          occupancyStatuses,
+          preferredContacts,
           errors: {
             required: locale === "en" ? "Required" : "Requis",
             submit: locale === "en" ? "Could not submit" : "Échec de l'envoi",

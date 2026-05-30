@@ -2,6 +2,7 @@ import { requireAdmin } from "@/lib/auth/session";
 import { getTranslations, setRequestLocale } from "next-intl/server";
 import AdminSidebar from "./_components/sidebar";
 import { signOutAction } from "./actions";
+import { ThemeToggle } from "@/components/theme-toggle";
 
 export default async function AdminLayout({
   children,
@@ -34,6 +35,7 @@ export default async function AdminLayout({
           </div>
           <div className="flex items-center gap-3">
             <span className="text-xs text-muted-foreground hidden sm:inline">{user.email}</span>
+            <ThemeToggle />
             <form action={signOut}>
               <button
                 type="submit"

@@ -40,6 +40,12 @@ export default async function LandingPage({
           >
             {t("landing.ctaRequest")}
           </Link>
+          <Link
+            href="/login"
+            className="inline-flex items-center justify-center px-6 py-3 rounded-md border border-border font-medium hover:bg-accent transition"
+          >
+            {t("landing.ctaClientPortal")}
+          </Link>
         </div>
       </div>
     </main>

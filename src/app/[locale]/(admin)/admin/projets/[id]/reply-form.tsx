@@ -56,8 +56,7 @@ export default function ReplyForm({
       />
       <div className="flex items-center justify-between gap-3">
         <div className="text-xs text-muted-foreground min-h-[1.25rem]">
-          {state.ok && state.skipped && labels.skipped}
-          {state.ok && !state.skipped && labels.sent}
+          {state.ok && labels.sent}
           {!state.ok && state.error && labels.error}
         </div>
         <button

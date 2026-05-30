@@ -11,7 +11,9 @@
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
     "db:push": "drizzle-kit push",
-    "db:studio": "drizzle-kit studio"
+    "db:studio": "drizzle-kit studio",
+    "db:seed": "tsx --env-file=.env.local src/lib/db/seed.ts",
+    "db:seed:clear": "tsx --env-file=.env.local src/lib/db/seed.ts --clear"
   },
   "dependencies": {
     "@react-pdf/renderer": "^4.1.6",
@@ -43,6 +45,7 @@
     "prettier": "^3.4.1",
     "prettier-plugin-tailwindcss": "^0.6.9",
     "tailwindcss": "^4",
+    "tsx": "^4.22.3",
     "tw-animate-css": "^1.0.2",
     "typescript": "^5"
   }

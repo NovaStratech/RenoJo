@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { useRouter } from "@/i18n/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+import { resolvePostLogin } from "./actions";
 
 type Labels = {
   email: string;
@@ -11,8 +11,13 @@ type Labels = {
   error: string;
 };
 
-export default function LoginForm({ labels }: { labels: Labels }) {
-  const router = useRouter();
+export default function LoginForm({
+  locale,
+  labels,
+}: {
+  locale: string;
+  labels: Labels;
+}) {
   const [isPending, startTransition] = useTransition();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -28,8 +33,8 @@ export default function LoginForm({ labels }: { labels: Labels }) {
         setErrorMsg(labels.error);
         return;
       }
-      router.push("/admin");
-      router.refresh();
+      const target = await resolvePostLogin(locale);
+      window.location.assign(target);
     });
   }
 

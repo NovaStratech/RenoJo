@@ -12,8 +12,9 @@
   },
   "landing": {
     "heroTitle": "Obtenez une estimation pour vos travaux de rénovation",
-    "heroSubtitle": "Décrivez votre projet, ajoutez quelques photos, et recevez un devis personnalisé. Sans création de compte.",
-    "ctaRequest": "Demander une estimation",
+    "heroSubtitle": "Décrivez votre projet, ajoutez quelques photos, et recevez un devis personnalisé.",
+    "ctaRequest": "Nouvelle demande",
+    "ctaClientPortal": "Espace client",
     "ctaAdmin": "Espace administrateur"
   },
   "request": {
@@ -33,7 +34,20 @@
       "projectType": "Type de projet",
       "description": "Décrivez votre projet",
       "descriptionHint": "Minimum 10 caractères",
-      "photos": "Photos (facultatif)"
+      "photos": "Photos (facultatif)",
+      "urgency": "Urgence",
+      "budget": "Budget estimé",
+      "propertyType": "Type de propriété",
+      "occupancyStatus": "Statut d'occupation",
+      "preferredContact": "Contact préféré",
+      "desiredStartDate": "Début souhaité",
+      "approxArea": "Superficie approx. (pi²)",
+      "approxAreaHint": "ex. 150",
+      "optional": "facultatif",
+      "accountTitle": "Créer un compte client (facultatif)",
+      "accountHint": "Choisissez un mot de passe pour suivre votre projet et échanger avec nous depuis votre espace client.",
+      "password": "Mot de passe",
+      "passwordConfirm": "Confirmer le mot de passe"
     }
   },
   "admin": {
@@ -43,8 +57,8 @@
     "settings": "Paramètres",
     "logout": "Déconnexion",
     "login": {
-      "title": "Connexion administrateur",
-      "subtitle": "Accès réservé",
+      "title": "Connexion",
+      "subtitle": "Connectez-vous à votre espace",
       "email": "Courriel",
       "password": "Mot de passe",
       "submit": "Se connecter",

@@ -12,8 +12,9 @@
   },
   "landing": {
     "heroTitle": "Get an estimate for your renovation project",
-    "heroSubtitle": "Describe your project, add a few photos, and receive a tailored quote. No account required.",
-    "ctaRequest": "Request an estimate",
+    "heroSubtitle": "Describe your project, add a few photos, and receive a tailored quote.",
+    "ctaRequest": "New request",
+    "ctaClientPortal": "Client portal",
     "ctaAdmin": "Admin area"
   },
   "request": {
@@ -33,7 +34,20 @@
       "projectType": "Project type",
       "description": "Describe your project",
       "descriptionHint": "Minimum 10 characters",
-      "photos": "Photos (optional)"
+      "photos": "Photos (optional)",
+      "urgency": "Urgency",
+      "budget": "Estimated budget",
+      "propertyType": "Property type",
+      "occupancyStatus": "Occupancy status",
+      "preferredContact": "Preferred contact",
+      "desiredStartDate": "Desired start",
+      "approxArea": "Approx. area (sq ft)",
+      "approxAreaHint": "e.g. 150",
+      "optional": "optional",
+      "accountTitle": "Create a client account (optional)",
+      "accountHint": "Choose a password to track your project and message us from your client portal.",
+      "password": "Password",
+      "passwordConfirm": "Confirm password"
     }
   },
   "admin": {
@@ -43,8 +57,8 @@
     "settings": "Settings",
     "logout": "Sign out",
     "login": {
-      "title": "Admin sign in",
-      "subtitle": "Restricted access",
+      "title": "Sign in",
+      "subtitle": "Sign in to your space",
       "email": "Email",
       "password": "Password",
       "submit": "Sign in",

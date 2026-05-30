@@ -3,6 +3,8 @@ import { Link } from "@/i18n/navigation";
 import {
   listProjectsForAdmin,
   getDashboardKpis,
+  getQuoteStats,
+  getRecentActivity,
   type ProjectStatusValue,
 } from "@/lib/admin/projects";
 import { formatDate, statusColors, statusLabel } from "@/lib/format";
@@ -41,10 +43,19 @@ export default async function AdminDashboardPage({
   setRequestLocale(locale);
   const t = await getTranslations("admin");
 
-  const [kpis, recent] = await Promise.all([
+  const [kpis, recent, quoteStats, activity] = await Promise.all([
     getDashboardKpis(),
     listProjectsForAdmin({ limit: 10 }),
+    getQuoteStats(),
+    getRecentActivity(8),
   ]);
+
+  const money = (n: number) =>
+    new Intl.NumberFormat(locale === "fr" ? "fr-CA" : "en-CA", {
+      style: "currency",
+      currency: "CAD",
+      maximumFractionDigits: 0,
+    }).format(n);
 
   const activePipeline =
     (kpis.byStatus.new ?? 0) +
@@ -141,6 +152,101 @@ export default async function AdminDashboardPage({
           })}
         </CardContent>
       </Card>
+
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>{locale === "fr" ? "Devis" : "Quotes"}</CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-3 gap-3">
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {locale === "fr" ? "Total" : "Total"}
+                </div>
+                <div className="text-2xl font-bold mt-1">{quoteStats.total}</div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {locale === "fr" ? "Acceptés" : "Accepted"}
+                </div>
+                <div className="text-2xl font-bold mt-1 text-emerald-600 dark:text-emerald-400">
+                  {money(quoteStats.acceptedValue)}
+                </div>
+              </div>
+              <div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground">
+                  {locale === "fr" ? "En attente" : "Pending"}
+                </div>
+                <div className="text-2xl font-bold mt-1 text-amber-600 dark:text-amber-400">
+                  {money(quoteStats.pendingValue)}
+                </div>
+              </div>
+            </div>
+            <div className="flex flex-wrap gap-2 text-xs">
+              {Object.entries(quoteStats.byStatus).map(([k, v]) => (
+                <span
+                  key={k}
+                  className="inline-flex items-center gap-1 px-2 py-0.5 rounded-full border border-border text-muted-foreground"
+                >
+                  {k}
+                  <span className="font-mono text-foreground">{v}</span>
+                </span>
+              ))}
+              {quoteStats.total === 0 && (
+                <span className="text-muted-foreground">
+                  {locale === "fr" ? "Aucun devis." : "No quotes."}
+                </span>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>
+              {locale === "fr" ? "Activité récente" : "Recent activity"}
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            {activity.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                {locale === "fr" ? "Aucune activité." : "No activity."}
+              </p>
+            ) : (
+              <ul className="space-y-3">
+                {activity.map((a, i) => (
+                  <li key={i} className="flex items-start gap-3 text-sm">
+                    <span
+                      className={`mt-1.5 h-2 w-2 shrink-0 rounded-full ${
+                        a.kind === "project"
+                          ? "bg-blue-500"
+                          : a.kind === "quote"
+                            ? "bg-purple-500"
+                            : "bg-emerald-500"
+                      }`}
+                    />
+                    <Link
+                      href={`/admin/projets/${a.projectId}`}
+                      className="flex-1 hover:text-primary transition-colors"
+                    >
+                      <div className="font-medium text-foreground">{a.label}</div>
+                      {a.sublabel && (
+                        <div className="text-xs text-muted-foreground">
+                          {a.sublabel}
+                        </div>
+                      )}
+                    </Link>
+                    <span className="text-xs text-muted-foreground whitespace-nowrap">
+                      {formatDate(a.at, locale)}
+                    </span>
+                  </li>
+                ))}
+              </ul>
+            )}
+          </CardContent>
+        </Card>
+      </div>
 
       <section className="space-y-3">
         <h2 className="text-lg font-semibold tracking-tight">

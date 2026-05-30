@@ -1,6 +1,7 @@
 import { relations, sql } from "drizzle-orm";
 import {
   boolean,
+  date,
   index,
   integer,
   jsonb,
@@ -84,6 +85,7 @@ export const clients = pgTable(
     fullName: varchar("full_name", { length: 200 }).notNull(),
     email: varchar("email", { length: 320 }).notNull(),
     phone: varchar("phone", { length: 40 }),
+    authUserId: uuid("auth_user_id").unique(),
     locale: localeEnum("locale").notNull().default("fr"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -109,7 +111,14 @@ export const projects = pgTable(
     description: text("description"),
     projectType: varchar("project_type", { length: 60 }), // e.g. kitchen, bathroom, painting, flooring, other
     urgency: varchar("urgency", { length: 30 }), // asap | weeks | months | flexible
-    budgetHint: varchar("budget_hint", { length: 50 }),
+    budgetHint: varchar("budget_hint", { length: 50 }), // under_5k | 5k_15k | 15k_30k | 30k_plus
+
+    // Extra qualification collected on the request form
+    propertyType: varchar("property_type", { length: 30 }), // house | condo | commercial
+    occupancyStatus: varchar("occupancy_status", { length: 20 }), // owner | tenant
+    preferredContact: varchar("preferred_contact", { length: 20 }), // email | phone | sms
+    desiredStartDate: date("desired_start_date"),
+    approxArea: integer("approx_area"), // approximate area in sq ft
 
     // Address snapshot at submission time (client may change later)
     addressLine: varchar("address_line", { length: 200 }),

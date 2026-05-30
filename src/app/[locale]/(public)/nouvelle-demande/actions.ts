@@ -8,6 +8,7 @@ import { clients, projects, projectPhotos } from "@/lib/db/schema";
 import { generateAccessToken, generateInboundKey } from "@/lib/auth/tokens";
 import { uploadToBucket, BUCKETS, randomFilename } from "@/lib/storage";
 import { sendEmail } from "@/lib/email/postmark";
+import { createSupabaseServiceClient } from "@/lib/supabase/admin";
 import {
   appOrigin,
   clientRequestReceived,
@@ -26,7 +27,24 @@ const requestSchema = z.object({
   projectType: z.string().trim().min(1).max(300),
   urgency: z.string().trim().max(30).optional().or(z.literal("")),
   budgetHint: z.string().trim().max(50).optional().or(z.literal("")),
+  propertyType: z.string().trim().max(30).optional().or(z.literal("")),
+  occupancyStatus: z.string().trim().max(20).optional().or(z.literal("")),
+  preferredContact: z.string().trim().max(20).optional().or(z.literal("")),
+  desiredStartDate: z
+    .string()
+    .trim()
+    .regex(/^\d{4}-\d{2}-\d{2}$/)
+    .optional()
+    .or(z.literal("")),
+  approxArea: z
+    .string()
+    .trim()
+    .regex(/^\d{1,6}$/)
+    .optional()
+    .or(z.literal("")),
   description: z.string().trim().min(10).max(5000),
+  password: z.string().min(8).max(72).optional().or(z.literal("")),
+  passwordConfirm: z.string().max(72).optional().or(z.literal("")),
 });
 
 const MAX_PHOTOS = 12;
@@ -65,7 +83,14 @@ export async function submitProjectRequest(
     "projectType",
     "urgency",
     "budgetHint",
+    "propertyType",
+    "occupancyStatus",
+    "preferredContact",
+    "desiredStartDate",
+    "approxArea",
     "description",
+    "password",
+    "passwordConfirm",
   ]) {
     const v = formData.get(key);
     if (typeof v === "string") raw[key] = v;
@@ -86,7 +111,17 @@ export async function submitProjectRequest(
   }
   const data = parsed.data;
 
-  // Collect & validate photos
+  const wantsAccount = Boolean(data.password);
+  if (wantsAccount && data.password !== data.passwordConfirm) {
+    return {
+      status: "error",
+      message:
+        data.locale === "fr"
+          ? "Les mots de passe ne correspondent pas."
+          : "Passwords do not match.",
+      fieldErrors: { passwordConfirm: ["mismatch"] },
+    };
+  }
   const photoEntries = formData.getAll("photos").filter((v): v is File => v instanceof File && v.size > 0);
   if (photoEntries.length > MAX_PHOTOS) {
     return { status: "error", message: `Maximum ${MAX_PHOTOS} photos.` };
@@ -139,6 +174,47 @@ export async function submitProjectRequest(
     clientId = inserted[0].id;
   }
 
+  // Optionally create a client portal account
+  if (wantsAccount) {
+    if (existingClient[0]?.authUserId) {
+      return {
+        status: "error",
+        message:
+          data.locale === "fr"
+            ? "Un compte existe déjà pour ce courriel. Connectez-vous d'abord."
+            : "An account already exists for this email. Please log in first.",
+        fieldErrors: { password: ["exists"] },
+      };
+    }
+    const service = createSupabaseServiceClient();
+    const { data: created, error: createErr } =
+      await service.auth.admin.createUser({
+        email: data.email,
+        password: data.password,
+        email_confirm: true,
+      });
+    if (createErr || !created.user) {
+      const alreadyExists = createErr?.message
+        ?.toLowerCase()
+        .includes("already");
+      return {
+        status: "error",
+        message: alreadyExists
+          ? data.locale === "fr"
+            ? "Un compte existe déjà pour ce courriel. Connectez-vous d'abord."
+            : "An account already exists for this email. Please log in first."
+          : data.locale === "fr"
+            ? "Impossible de créer le compte. Réessayez."
+            : "Could not create the account. Please try again.",
+        fieldErrors: { password: ["create_failed"] },
+      };
+    }
+    await db
+      .update(clients)
+      .set({ authUserId: created.user.id })
+      .where(eq(clients.id, clientId));
+  }
+
   // Create project
   const projectInsert = await db
     .insert(projects)
@@ -149,6 +225,11 @@ export async function submitProjectRequest(
       projectType: data.projectType,
       urgency: data.urgency || null,
       budgetHint: data.budgetHint || null,
+      propertyType: data.propertyType || null,
+      occupancyStatus: data.occupancyStatus || null,
+      preferredContact: data.preferredContact || null,
+      desiredStartDate: data.desiredStartDate || null,
+      approxArea: data.approxArea ? Number(data.approxArea) : null,
       addressLine: data.addressLine || null,
       city: data.city || null,
       postalCode: data.postalCode || null,

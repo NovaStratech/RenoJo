@@ -24,6 +24,10 @@ type Labels = {
   };
   projectTypes: Array<{ value: string; label: string }>;
   urgencies: Array<{ value: string; label: string }>;
+  budgets: Array<{ value: string; label: string }>;
+  propertyTypes: Array<{ value: string; label: string }>;
+  occupancyStatuses: Array<{ value: string; label: string }>;
+  preferredContacts: Array<{ value: string; label: string }>;
   errors: { required: string; submit: string };
 };
 
@@ -44,7 +48,14 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     postalCode: "",
     urgency: "",
     budgetHint: "",
+    propertyType: "",
+    occupancyStatus: "",
+    preferredContact: "",
+    desiredStartDate: "",
+    approxArea: "",
     description: "",
+    password: "",
+    passwordConfirm: "",
   });
 
   const [state, formAction, pending] = useActionState<SubmitState, FormData>(
@@ -171,6 +182,35 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
             onChange={(v) => update("phone", v)}
             autoComplete="tel"
           />
+
+          <div className="rounded-lg border border-border bg-muted/30 p-4 space-y-4">
+            <div>
+              <p className="text-sm font-medium">
+                {labels.fields.accountTitle}
+              </p>
+              <p className="text-xs text-muted-foreground mt-0.5">
+                {labels.fields.accountHint}
+              </p>
+            </div>
+            <Field
+              label={labels.fields.password}
+              id="password"
+              type="password"
+              value={form.password}
+              onChange={(v) => update("password", v)}
+              autoComplete="new-password"
+              error={fieldError("password")}
+            />
+            <Field
+              label={labels.fields.passwordConfirm}
+              id="passwordConfirm"
+              type="password"
+              value={form.passwordConfirm}
+              onChange={(v) => update("passwordConfirm", v)}
+              autoComplete="new-password"
+              error={fieldError("passwordConfirm")}
+            />
+          </div>
         </div>
       )}
 
@@ -238,25 +278,78 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
               })}
             </div>
           </div>
-          <div>
-            <label className="text-sm font-medium block mb-2">
-              {locale === "en" ? "Urgency" : "Urgence"}
-            </label>
-            <div className="flex flex-wrap gap-2">
-              {labels.urgencies.map((u) => (
-                <button
-                  type="button"
-                  key={u.value}
-                  onClick={() => update("urgency", u.value)}
-                  className={`px-3 py-2 rounded-md border text-sm transition ${
-                    form.urgency === u.value
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border hover:bg-accent"
-                  }`}
-                >
-                  {u.label}
-                </button>
-              ))}
+          <ChipGroup
+            label={labels.fields.urgency}
+            options={labels.urgencies}
+            value={form.urgency}
+            onChange={(v) => update("urgency", v)}
+          />
+
+          <ChipGroup
+            label={labels.fields.propertyType}
+            options={labels.propertyTypes}
+            value={form.propertyType}
+            onChange={(v) => update("propertyType", v)}
+            optionalLabel={labels.fields.optional}
+          />
+
+          <ChipGroup
+            label={labels.fields.occupancyStatus}
+            options={labels.occupancyStatuses}
+            value={form.occupancyStatus}
+            onChange={(v) => update("occupancyStatus", v)}
+            optionalLabel={labels.fields.optional}
+          />
+
+          <ChipGroup
+            label={labels.fields.budget}
+            options={labels.budgets}
+            value={form.budgetHint}
+            onChange={(v) => update("budgetHint", v)}
+            optionalLabel={labels.fields.optional}
+          />
+
+          <ChipGroup
+            label={labels.fields.preferredContact}
+            options={labels.preferredContacts}
+            value={form.preferredContact}
+            onChange={(v) => update("preferredContact", v)}
+            optionalLabel={labels.fields.optional}
+          />
+
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label htmlFor="desiredStartDate" className="text-sm font-medium block mb-1">
+                {labels.fields.desiredStartDate}
+                <span className="text-xs text-muted-foreground font-normal ml-1">
+                  ({labels.fields.optional})
+                </span>
+              </label>
+              <input
+                id="desiredStartDate"
+                type="date"
+                value={form.desiredStartDate}
+                onChange={(e) => update("desiredStartDate", e.target.value)}
+                className="w-full px-3 py-2 rounded-md border border-input bg-background"
+              />
+            </div>
+            <div>
+              <label htmlFor="approxArea" className="text-sm font-medium block mb-1">
+                {labels.fields.approxArea}
+                <span className="text-xs text-muted-foreground font-normal ml-1">
+                  ({labels.fields.optional})
+                </span>
+              </label>
+              <input
+                id="approxArea"
+                type="number"
+                inputMode="numeric"
+                min={0}
+                placeholder={labels.fields.approxAreaHint}
+                value={form.approxArea}
+                onChange={(e) => update("approxArea", e.target.value.replace(/[^\d]/g, ""))}
+                className="w-full px-3 py-2 rounded-md border border-input bg-background"
+              />
             </div>
           </div>
         </div>
@@ -418,6 +511,51 @@ function Review({ label, value }: { label: string; value: string }) {
     <div className="flex gap-3 border-b border-border pb-2">
       <div className="w-32 shrink-0 text-muted-foreground">{label}</div>
       <div className="flex-1 whitespace-pre-wrap">{value}</div>
+    </div>
+  );
+}
+
+function ChipGroup({
+  label,
+  options,
+  value,
+  onChange,
+  optionalLabel,
+}: {
+  label: string;
+  options: Array<{ value: string; label: string }>;
+  value: string;
+  onChange: (v: string) => void;
+  optionalLabel?: string;
+}) {
+  return (
+    <div>
+      <label className="text-sm font-medium block mb-2">
+        {label}
+        {optionalLabel && (
+          <span className="text-xs text-muted-foreground font-normal ml-1">({optionalLabel})</span>
+        )}
+      </label>
+      <div className="flex flex-wrap gap-2">
+        {options.map((o) => {
+          const active = value === o.value;
+          return (
+            <button
+              type="button"
+              key={o.value}
+              onClick={() => onChange(active ? "" : o.value)}
+              aria-pressed={active}
+              className={`px-3 py-2 rounded-md border text-sm transition ${
+                active
+                  ? "border-primary bg-primary text-primary-foreground"
+                  : "border-border hover:bg-accent"
+              }`}
+            >
+              {o.label}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }

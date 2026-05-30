@@ -26,6 +26,7 @@ export default async function LoginPage({
             <p className="text-sm text-muted-foreground">{t("subtitle")}</p>
           </div>
           <LoginForm
+            locale={locale}
             labels={{
               email: t("email"),
               password: t("password"),

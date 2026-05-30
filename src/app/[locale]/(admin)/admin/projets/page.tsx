@@ -24,15 +24,88 @@ export default async function AdminProjectsListPage({
   searchParams,
 }: {
   params: Promise<{ locale: string }>;
-  searchParams: Promise<{ status?: string; q?: string }>;
+  searchParams: Promise<{
+    status?: string;
+    q?: string;
+    type?: string;
+    urgency?: string;
+    from?: string;
+    to?: string;
+    sort?: string;
+  }>;
 }) {
   const { locale } = await params;
   setRequestLocale(locale);
   const sp = await searchParams;
   const status = parseStatus(sp.status);
   const search = (sp.q ?? "").toString();
+  const type = (sp.type ?? "").toString();
+  const urgency = (sp.urgency ?? "").toString();
+  const from = (sp.from ?? "").toString();
+  const to = (sp.to ?? "").toString();
+  const sort = (sp.sort ?? "created_desc").toString();
 
-  const rows = await listProjectsForAdmin({ status, search, limit: 200 });
+  const rows = await listProjectsForAdmin({
+    status,
+    search,
+    projectType: type,
+    urgency,
+    dateFrom: from,
+    dateTo: to,
+    sort: sort as never,
+    limit: 200,
+  });
+
+  const projectTypeOptions =
+    locale === "fr"
+      ? [
+          { value: "kitchen", label: "Cuisine" },
+          { value: "bathroom", label: "Salle de bain" },
+          { value: "painting", label: "Peinture" },
+          { value: "flooring", label: "Plancher" },
+          { value: "basement", label: "Sous-sol" },
+          { value: "exterior", label: "Extérieur" },
+          { value: "other", label: "Autre" },
+        ]
+      : [
+          { value: "kitchen", label: "Kitchen" },
+          { value: "bathroom", label: "Bathroom" },
+          { value: "painting", label: "Painting" },
+          { value: "flooring", label: "Flooring" },
+          { value: "basement", label: "Basement" },
+          { value: "exterior", label: "Exterior" },
+          { value: "other", label: "Other" },
+        ];
+
+  const urgencyOptions =
+    locale === "fr"
+      ? [
+          { value: "asap", label: "Dès que possible" },
+          { value: "weeks", label: "Quelques semaines" },
+          { value: "months", label: "Quelques mois" },
+          { value: "flexible", label: "Flexible" },
+        ]
+      : [
+          { value: "asap", label: "ASAP" },
+          { value: "weeks", label: "Within weeks" },
+          { value: "months", label: "Within months" },
+          { value: "flexible", label: "Flexible" },
+        ];
+
+  const sortOptions =
+    locale === "fr"
+      ? [
+          { value: "created_desc", label: "Plus récents" },
+          { value: "created_asc", label: "Plus anciens" },
+          { value: "updated_desc", label: "Mis à jour récemment" },
+          { value: "title_asc", label: "Titre (A→Z)" },
+        ]
+      : [
+          { value: "created_desc", label: "Newest" },
+          { value: "created_asc", label: "Oldest" },
+          { value: "updated_desc", label: "Recently updated" },
+          { value: "title_asc", label: "Title (A→Z)" },
+        ];
 
   return (
     <div className="px-6 py-8 max-w-7xl mx-auto w-full space-y-6">
@@ -44,14 +117,27 @@ export default async function AdminProjectsListPage({
         locale={locale}
         currentStatus={status}
         currentSearch={search}
+        currentType={type}
+        currentUrgency={urgency}
+        currentDateFrom={from}
+        currentDateTo={to}
+        currentSort={sort}
         statuses={STATUSES}
+        projectTypes={projectTypeOptions}
+        urgencies={urgencyOptions}
+        sorts={sortOptions}
         labels={{
           all: locale === "fr" ? "Tous les statuts" : "All statuses",
+          allTypes: locale === "fr" ? "Tous les types" : "All types",
+          allUrgencies: locale === "fr" ? "Toutes urgences" : "All urgencies",
           search:
             locale === "fr"
               ? "Rechercher (titre, client, courriel, ville)…"
               : "Search (title, client, email, city)…",
-          status: locale === "fr" ? "Statut" : "Status",
+          from: locale === "fr" ? "Du" : "From",
+          to: locale === "fr" ? "Au" : "To",
+          sort: locale === "fr" ? "Trier" : "Sort",
+          reset: locale === "fr" ? "Réinitialiser" : "Reset",
         }}
       />
 

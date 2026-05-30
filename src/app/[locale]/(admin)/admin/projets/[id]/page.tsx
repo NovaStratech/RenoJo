@@ -4,12 +4,65 @@ import { Link } from "@/i18n/navigation";
 import { getAdminProjectDetail } from "@/lib/admin/projects";
 import { projectStatus } from "@/lib/db/schema";
 import { BUCKETS, createSignedUrl } from "@/lib/storage";
-import { formatDateTime, statusColors, statusLabel } from "@/lib/format";
+import { formatDate, formatDateTime, statusColors, statusLabel } from "@/lib/format";
 import StatusSelect from "./status-select";
 import ReplyForm from "./reply-form";
 import AIPanel from "./ai-panel";
 
 export const dynamic = "force-dynamic";
+
+function pick(
+  value: string | null | undefined,
+  fr: Record<string, string>,
+  en: Record<string, string>,
+  locale: string,
+) {
+  if (!value) return "—";
+  const map = locale === "fr" ? fr : en;
+  return map[value] ?? value;
+}
+
+const budgetLabel = (v: string | null | undefined, locale: string) =>
+  pick(
+    v,
+    {
+      under_5k: "Moins de 5 000 $",
+      "5k_15k": "5 000 – 15 000 $",
+      "15k_30k": "15 000 – 30 000 $",
+      "30k_plus": "Plus de 30 000 $",
+    },
+    {
+      under_5k: "Under $5,000",
+      "5k_15k": "$5,000 – $15,000",
+      "15k_30k": "$15,000 – $30,000",
+      "30k_plus": "Over $30,000",
+    },
+    locale,
+  );
+
+const propertyLabel = (v: string | null | undefined, locale: string) =>
+  pick(
+    v,
+    { house: "Maison", condo: "Condo", commercial: "Commercial" },
+    { house: "House", condo: "Condo", commercial: "Commercial" },
+    locale,
+  );
+
+const occupancyLabel = (v: string | null | undefined, locale: string) =>
+  pick(
+    v,
+    { owner: "Propriétaire", tenant: "Locataire" },
+    { owner: "Owner", tenant: "Tenant" },
+    locale,
+  );
+
+const contactLabel = (v: string | null | undefined, locale: string) =>
+  pick(
+    v,
+    { email: "Courriel", phone: "Téléphone", sms: "SMS" },
+    { email: "Email", phone: "Phone", sms: "SMS" },
+    locale,
+  );
 
 export default async function AdminProjectDetailPage({
   params,
@@ -124,7 +177,39 @@ export default async function AdminProjectDetailPage({
               <span className="text-muted-foreground">
                 {locale === "fr" ? "Budget" : "Budget"}:
               </span>{" "}
-              {project.budgetHint ?? "—"}
+              {budgetLabel(project.budgetHint, locale)}
+            </div>
+            <div>
+              <span className="text-muted-foreground">
+                {locale === "fr" ? "Propriété" : "Property"}:
+              </span>{" "}
+              {propertyLabel(project.propertyType, locale)}
+            </div>
+            <div>
+              <span className="text-muted-foreground">
+                {locale === "fr" ? "Occupation" : "Occupancy"}:
+              </span>{" "}
+              {occupancyLabel(project.occupancyStatus, locale)}
+            </div>
+            <div>
+              <span className="text-muted-foreground">
+                {locale === "fr" ? "Contact préféré" : "Preferred contact"}:
+              </span>{" "}
+              {contactLabel(project.preferredContact, locale)}
+            </div>
+            <div>
+              <span className="text-muted-foreground">
+                {locale === "fr" ? "Début souhaité" : "Desired start"}:
+              </span>{" "}
+              {project.desiredStartDate
+                ? formatDate(new Date(project.desiredStartDate), locale)
+                : "—"}
+            </div>
+            <div>
+              <span className="text-muted-foreground">
+                {locale === "fr" ? "Superficie" : "Area"}:
+              </span>{" "}
+              {project.approxArea ? `${project.approxArea} pi²` : "—"}
             </div>
           </div>
         </section>
