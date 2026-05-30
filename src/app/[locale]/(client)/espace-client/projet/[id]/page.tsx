@@ -7,6 +7,7 @@ import { BUCKETS, createSignedUrl } from "@/lib/storage";
 import { formatDateTime, statusColors, statusLabel } from "@/lib/format";
 import { Card } from "@/components/ui/card";
 import ClientReplyForm from "./reply-form";
+import PortalQuoteActions from "./portal-quote-actions";
 
 export const dynamic = "force-dynamic";
 
@@ -119,6 +120,60 @@ export default async function ClientProjectDetailPage({
                   </div>
                 </div>
               </div>
+
+              {q.status === "accepted" ? (
+                <div className="rounded-lg border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm">
+                  ✓ {locale === "fr" ? "Devis accepté" : "Quote accepted"}
+                  {q.acceptedAt && <> · {formatDateTime(q.acceptedAt, locale)}</>}
+                  {q.signatureName && (
+                    <>
+                      {" "}
+                      {locale === "fr" ? "par" : "by"}{" "}
+                      <strong>{q.signatureName}</strong>
+                    </>
+                  )}
+                </div>
+              ) : q.status === "declined" ? (
+                <div className="rounded-lg border border-red-500/40 bg-red-500/10 p-3 text-sm">
+                  {locale === "fr" ? "Devis refusé" : "Quote declined"}
+                </div>
+              ) : (
+                <PortalQuoteActions
+                  locale={locale}
+                  projectId={project.id}
+                  quoteId={q.id}
+                  quoteNumber={q.number}
+                  labels={{
+                    title:
+                      locale === "fr"
+                        ? "Accepter le devis"
+                        : "Accept this quote",
+                    namePlaceholder:
+                      locale === "fr"
+                        ? "Votre nom complet"
+                        : "Your full name",
+                    signaturePrompt:
+                      locale === "fr"
+                        ? "Signez ci-dessous (souris ou doigt) :"
+                        : "Sign below (mouse or finger):",
+                    clearSig: locale === "fr" ? "Effacer" : "Clear",
+                    accept: locale === "fr" ? "Accepter" : "Accept",
+                    accepted:
+                      locale === "fr"
+                        ? "Merci, votre acceptation a bien été enregistrée."
+                        : "Thanks, your acceptance has been recorded.",
+                    decline: locale === "fr" ? "Refuser" : "Decline",
+                    confirmDecline:
+                      locale === "fr"
+                        ? "Refuser ce devis ?"
+                        : "Decline this quote?",
+                    error:
+                      locale === "fr"
+                        ? "Une erreur est survenue."
+                        : "Something went wrong.",
+                  }}
+                />
+              )}
             </Card>
           ))}
         </section>
