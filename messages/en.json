@@ -32,6 +32,7 @@
       "postalCode": "Postal code",
       "projectType": "Project type",
       "description": "Describe your project",
+      "descriptionHint": "Minimum 10 characters",
       "photos": "Photos (optional)"
     }
   },
@@ -43,10 +44,10 @@
     "logout": "Sign out",
     "login": {
       "title": "Admin sign in",
+      "subtitle": "Restricted access",
       "email": "Email",
       "password": "Password",
       "submit": "Sign in",
-      "magicLink": "Send me a magic link",
       "error": "Invalid credentials"
     }
   }

@@ -34,6 +34,7 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
   const [step, setStep] = useState<Step>("contact");
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoCompressing, startCompressing] = useTransition();
+  const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
   const [form, setForm] = useState({
     fullName: "",
     email: "",
@@ -41,7 +42,6 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     addressLine: "",
     city: "",
     postalCode: "",
-    projectType: "",
     urgency: "",
     budgetHint: "",
     description: "",
@@ -90,7 +90,7 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
       case "address":
         return true; // optional
       case "project":
-        return form.projectType !== "";
+        return selectedTypes.length > 0;
       case "description":
         return form.description.trim().length >= 10;
       case "review":
@@ -117,6 +117,7 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     e.preventDefault();
     const fd = new FormData();
     fd.append("locale", locale);
+    fd.append("projectType", selectedTypes.join(","));
     for (const [k, v] of Object.entries(form)) fd.append(k, v);
     for (const p of photos) fd.append("photos", p);
     formAction(fd);
@@ -206,26 +207,41 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
           <div>
             <label className="text-sm font-medium block mb-2">
               {labels.fields.projectType}
+              <span className="text-xs text-muted-foreground font-normal ml-2">
+                ({locale === "en" ? "select one or more" : "sélection multiple"})
+              </span>
             </label>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-              {labels.projectTypes.map((t) => (
-                <button
-                  type="button"
-                  key={t.value}
-                  onClick={() => update("projectType", t.value)}
-                  className={`px-3 py-3 rounded-md border text-sm font-medium transition ${
-                    form.projectType === t.value
-                      ? "border-primary bg-primary text-primary-foreground"
-                      : "border-border hover:bg-accent"
-                  }`}
-                >
-                  {t.label}
-                </button>
-              ))}
+              {labels.projectTypes.map((t) => {
+                const active = selectedTypes.includes(t.value);
+                return (
+                  <button
+                    type="button"
+                    key={t.value}
+                    onClick={() =>
+                      setSelectedTypes((prev) =>
+                        prev.includes(t.value)
+                          ? prev.filter((v) => v !== t.value)
+                          : [...prev, t.value],
+                      )
+                    }
+                    aria-pressed={active}
+                    className={`px-3 py-3 rounded-md border text-sm font-medium transition ${
+                      active
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border hover:bg-accent"
+                    }`}
+                  >
+                    {t.label}
+                  </button>
+                );
+              })}
             </div>
           </div>
           <div>
-            <label className="text-sm font-medium block mb-2">Urgence</label>
+            <label className="text-sm font-medium block mb-2">
+              {locale === "en" ? "Urgency" : "Urgence"}
+            </label>
             <div className="flex flex-wrap gap-2">
               {labels.urgencies.map((u) => (
                 <button
@@ -251,15 +267,23 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
           <div>
             <label htmlFor="description" className="text-sm font-medium block mb-1">
               {labels.fields.description}
+              <span className="text-xs text-muted-foreground font-normal ml-2">
+                ({labels.fields.descriptionHint})
+              </span>
             </label>
             <textarea
               id="description"
               required
               rows={6}
+              minLength={10}
+              placeholder={labels.fields.descriptionHint}
               value={form.description}
               onChange={(e) => update("description", e.target.value)}
               className="w-full px-3 py-2 rounded-md border border-input bg-background"
             />
+            <p className="text-xs text-muted-foreground mt-1">
+              {form.description.trim().length} / 10
+            </p>
             {fieldError("description") && (
               <p className="text-xs text-destructive mt-1">{fieldError("description")}</p>
             )}
@@ -313,9 +337,9 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
           )}
           <Review
             label={labels.fields.projectType}
-            value={
-              labels.projectTypes.find((t) => t.value === form.projectType)?.label ?? form.projectType
-            }
+            value={selectedTypes
+              .map((v) => labels.projectTypes.find((t) => t.value === v)?.label ?? v)
+              .join(", ")}
           />
           <Review label={labels.fields.description} value={form.description} />
           <Review label={labels.fields.photos} value={`${photos.length}`} />

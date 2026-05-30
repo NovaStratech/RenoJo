@@ -23,7 +23,7 @@ const requestSchema = z.object({
   addressLine: z.string().trim().max(200).optional().or(z.literal("")),
   city: z.string().trim().max(100).optional().or(z.literal("")),
   postalCode: z.string().trim().max(20).optional().or(z.literal("")),
-  projectType: z.string().trim().max(60),
+  projectType: z.string().trim().min(1).max(300),
   urgency: z.string().trim().max(30).optional().or(z.literal("")),
   budgetHint: z.string().trim().max(50).optional().or(z.literal("")),
   description: z.string().trim().min(10).max(5000),
@@ -220,8 +220,8 @@ export async function submitProjectRequest(
     }
   }
 
-  // Redirect to the client portal
-  redirect(`/${data.locale}/projet/${token}?welcome=1`);
+  // Redirect to homepage with success flag
+  redirect(`/${data.locale}?submitted=1&token=${token}`);
 }
 
 function buildProjectTitle(projectType: string, city?: string): string {
@@ -234,6 +234,13 @@ function buildProjectTitle(projectType: string, city?: string): string {
     exterior: "Extérieur",
     other: "Projet de rénovation",
   };
-  const base = labels[projectType] ?? "Projet de rénovation";
+  const types = projectType
+    .split(",")
+    .map((s) => s.trim())
+    .filter(Boolean);
+  const base =
+    types.length === 0
+      ? "Projet de rénovation"
+      : types.map((t) => labels[t] ?? t).join(" + ");
   return city ? `${base} — ${city}` : base;
 }

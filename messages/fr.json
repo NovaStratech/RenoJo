@@ -32,6 +32,7 @@
       "postalCode": "Code postal",
       "projectType": "Type de projet",
       "description": "Décrivez votre projet",
+      "descriptionHint": "Minimum 10 caractères",
       "photos": "Photos (facultatif)"
     }
   },
@@ -43,10 +44,10 @@
     "logout": "Déconnexion",
     "login": {
       "title": "Connexion administrateur",
+      "subtitle": "Accès réservé",
       "email": "Courriel",
       "password": "Mot de passe",
       "submit": "Se connecter",
-      "magicLink": "Recevoir un lien de connexion",
       "error": "Identifiants invalides"
     }
   }

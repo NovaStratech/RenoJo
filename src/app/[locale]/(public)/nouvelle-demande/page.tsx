@@ -71,6 +71,7 @@ export default async function NouvelleDemandePage({
             postalCode: t("fields.postalCode"),
             projectType: t("fields.projectType"),
             description: t("fields.description"),
+            descriptionHint: t("fields.descriptionHint"),
             photos: t("fields.photos"),
           },
           buttons: {

@@ -8,7 +8,6 @@ type Labels = {
   email: string;
   password: string;
   submit: string;
-  magicLink: string;
   error: string;
 };
 
@@ -18,12 +17,10 @@ export default function LoginForm({ labels }: { labels: Labels }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
-  const [info, setInfo] = useState<string | null>(null);
 
   function handleSignIn(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     setErrorMsg(null);
-    setInfo(null);
     startTransition(async () => {
       const supabase = createSupabaseBrowserClient();
       const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -36,32 +33,9 @@ export default function LoginForm({ labels }: { labels: Labels }) {
     });
   }
 
-  function handleMagicLink() {
-    setErrorMsg(null);
-    setInfo(null);
-    if (!email) {
-      setErrorMsg(labels.error);
-      return;
-    }
-    startTransition(async () => {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          emailRedirectTo: `${window.location.origin}/admin`,
-        },
-      });
-      if (error) {
-        setErrorMsg(labels.error);
-        return;
-      }
-      setInfo("✓");
-    });
-  }
-
   return (
-    <form onSubmit={handleSignIn} className="space-y-4">
-      <div className="space-y-1">
+    <form onSubmit={handleSignIn} className="space-y-5">
+      <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="email">
           {labels.email}
         </label>
@@ -72,38 +46,34 @@ export default function LoginForm({ labels }: { labels: Labels }) {
           autoComplete="email"
           value={email}
           onChange={(e) => setEmail(e.target.value)}
-          className="w-full px-3 py-2 rounded-md border border-input bg-background"
+          className="w-full px-3 py-2.5 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
         />
       </div>
-      <div className="space-y-1">
+      <div className="space-y-1.5">
         <label className="text-sm font-medium" htmlFor="password">
           {labels.password}
         </label>
         <input
           id="password"
           type="password"
+          required
           autoComplete="current-password"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
-          className="w-full px-3 py-2 rounded-md border border-input bg-background"
+          className="w-full px-3 py-2.5 rounded-lg border border-input bg-background focus:outline-none focus:ring-2 focus:ring-primary/40 focus:border-primary transition"
         />
       </div>
-      {errorMsg && <p className="text-sm text-destructive">{errorMsg}</p>}
-      {info && <p className="text-sm text-muted-foreground">{info}</p>}
+      {errorMsg && (
+        <p className="text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md px-3 py-2">
+          {errorMsg}
+        </p>
+      )}
       <button
         type="submit"
         disabled={isPending}
-        className="w-full inline-flex items-center justify-center px-4 py-2 rounded-md bg-primary text-primary-foreground font-medium disabled:opacity-60"
+        className="w-full inline-flex items-center justify-center px-4 py-2.5 rounded-lg bg-primary text-primary-foreground font-medium shadow-sm hover:opacity-90 disabled:opacity-60 transition"
       >
-        {labels.submit}
-      </button>
-      <button
-        type="button"
-        onClick={handleMagicLink}
-        disabled={isPending}
-        className="w-full inline-flex items-center justify-center px-4 py-2 rounded-md border border-border font-medium hover:bg-accent disabled:opacity-60"
-      >
-        {labels.magicLink}
+        {isPending ? "…" : labels.submit}
       </button>
     </form>
   );
