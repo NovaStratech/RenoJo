@@ -44,10 +44,22 @@
       "approxArea": "Approx. area (sq ft)",
       "approxAreaHint": "e.g. 150",
       "optional": "optional",
-      "accountTitle": "Create a client account (optional)",
+      "accountTitle": "Create your client account",
       "accountHint": "Choose a password to track your project and message us from your client portal.",
       "password": "Password",
       "passwordConfirm": "Confirm password"
+    },
+    "alreadyHaveAccount": "Already have an account?",
+    "errors": {
+      "fullName": "Please enter your full name.",
+      "email": "Please enter a valid email.",
+      "passwordRequired": "Please choose a password.",
+      "passwordMin": "Password must be at least 8 characters.",
+      "passwordMatch": "Passwords do not match.",
+      "projectType": "Please select at least one project type.",
+      "description": "Please describe your project (at least 10 characters).",
+      "accountExists": "An account already exists for this email. Sign in to submit your request.",
+      "loginCta": "Sign in"
     }
   },
   "admin": {

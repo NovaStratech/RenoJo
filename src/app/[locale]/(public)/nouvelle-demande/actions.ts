@@ -43,8 +43,8 @@ const requestSchema = z.object({
     .optional()
     .or(z.literal("")),
   description: z.string().trim().min(10).max(5000),
-  password: z.string().min(8).max(72).optional().or(z.literal("")),
-  passwordConfirm: z.string().max(72).optional().or(z.literal("")),
+  password: z.string().min(8).max(72),
+  passwordConfirm: z.string().min(1).max(72),
 });
 
 const MAX_PHOTOS = 12;
@@ -111,8 +111,7 @@ export async function submitProjectRequest(
   }
   const data = parsed.data;
 
-  const wantsAccount = Boolean(data.password);
-  if (wantsAccount && data.password !== data.passwordConfirm) {
+  if (data.password !== data.passwordConfirm) {
     return {
       status: "error",
       message:
@@ -135,6 +134,25 @@ export async function submitProjectRequest(
     }
   }
 
+  // Look up any existing client by email (email is the natural key).
+  const existingClient = await db
+    .select()
+    .from(clients)
+    .where(eq(clients.email, data.email))
+    .limit(1);
+
+  // An account already exists → the visitor must sign in to submit the request.
+  if (existingClient[0]?.authUserId) {
+    return {
+      status: "error",
+      message:
+        data.locale === "fr"
+          ? "Un compte existe déjà pour ce courriel. Connectez-vous pour soumettre votre demande."
+          : "An account already exists for this email. Sign in to submit your request.",
+      fieldErrors: { password: ["exists"] },
+    };
+  }
+
   // Generate magic token + inbound key
   const { token, hash } = generateAccessToken();
   const inboundKey = generateInboundKey();
@@ -142,13 +160,7 @@ export async function submitProjectRequest(
   // Project title heuristic
   const projectTitle = buildProjectTitle(data.projectType, data.city);
 
-  // Upsert client by email (no auth — email is the natural key)
-  const existingClient = await db
-    .select()
-    .from(clients)
-    .where(eq(clients.email, data.email))
-    .limit(1);
-
+  // Upsert client by email.
   let clientId: string;
   if (existingClient[0]) {
     clientId = existingClient[0].id;
@@ -174,18 +186,8 @@ export async function submitProjectRequest(
     clientId = inserted[0].id;
   }
 
-  // Optionally create a client portal account
-  if (wantsAccount) {
-    if (existingClient[0]?.authUserId) {
-      return {
-        status: "error",
-        message:
-          data.locale === "fr"
-            ? "Un compte existe déjà pour ce courriel. Connectez-vous d'abord."
-            : "An account already exists for this email. Please log in first.",
-        fieldErrors: { password: ["exists"] },
-      };
-    }
+  // Create the client portal account (password is mandatory) and link it.
+  {
     const service = createSupabaseServiceClient();
     const { data: created, error: createErr } =
       await service.auth.admin.createUser({
@@ -201,12 +203,12 @@ export async function submitProjectRequest(
         status: "error",
         message: alreadyExists
           ? data.locale === "fr"
-            ? "Un compte existe déjà pour ce courriel. Connectez-vous d'abord."
-            : "An account already exists for this email. Please log in first."
+            ? "Un compte existe déjà pour ce courriel. Connectez-vous pour soumettre votre demande."
+            : "An account already exists for this email. Sign in to submit your request."
           : data.locale === "fr"
             ? "Impossible de créer le compte. Réessayez."
             : "Could not create the account. Please try again.",
-        fieldErrors: { password: ["create_failed"] },
+        fieldErrors: { password: [alreadyExists ? "exists" : "create_failed"] },
       };
     }
     await db

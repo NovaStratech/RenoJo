@@ -2,6 +2,7 @@
 
 import { useActionState, useState, useTransition } from "react";
 import { submitProjectRequest, type SubmitState } from "./actions";
+import { Link } from "@/i18n/navigation";
 import imageCompression from "browser-image-compression";
 
 type Labels = {
@@ -28,7 +29,20 @@ type Labels = {
   propertyTypes: Array<{ value: string; label: string }>;
   occupancyStatuses: Array<{ value: string; label: string }>;
   preferredContacts: Array<{ value: string; label: string }>;
-  errors: { required: string; submit: string };
+  errors: {
+    required: string;
+    submit: string;
+    fullName: string;
+    email: string;
+    passwordRequired: string;
+    passwordMin: string;
+    passwordMatch: string;
+    projectType: string;
+    description: string;
+    accountExists: string;
+    loginCta: string;
+  };
+  alreadyHaveAccount: string;
 };
 
 const STEPS = ["contact", "address", "project", "description", "review"] as const;
@@ -36,6 +50,7 @@ type Step = (typeof STEPS)[number];
 
 export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; labels: Labels }) {
   const [step, setStep] = useState<Step>("contact");
+  const [stepErrors, setStepErrors] = useState<Record<string, string>>({});
   const [photos, setPhotos] = useState<File[]>([]);
   const [photoCompressing, startCompressing] = useTransition();
   const [selectedTypes, setSelectedTypes] = useState<string[]>([]);
@@ -65,6 +80,12 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
 
   function update<K extends keyof typeof form>(key: K, value: string) {
     setForm((f) => ({ ...f, [key]: value }));
+    setStepErrors((e) => {
+      if (!e[key as string]) return e;
+      const next = { ...e };
+      delete next[key as string];
+      return next;
+    });
   }
 
   async function onFilesPicked(e: React.ChangeEvent<HTMLInputElement>) {
@@ -94,19 +115,21 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     setPhotos((prev) => prev.filter((_, i) => i !== idx));
   }
 
-  function canAdvance(): boolean {
-    switch (step) {
-      case "contact":
-        return form.fullName.trim().length >= 2 && /.+@.+\..+/.test(form.email);
-      case "address":
-        return true; // optional
-      case "project":
-        return selectedTypes.length > 0;
-      case "description":
-        return form.description.trim().length >= 10;
-      case "review":
-        return true;
+  function validateStep(s: Step): Record<string, string> {
+    const e: Record<string, string> = {};
+    const E = labels.errors;
+    if (s === "contact") {
+      if (form.fullName.trim().length < 2) e.fullName = E.fullName;
+      if (!/.+@.+\..+/.test(form.email.trim())) e.email = E.email;
+      if (!form.password) e.password = E.passwordRequired;
+      else if (form.password.length < 8) e.password = E.passwordMin;
+      if (form.password !== form.passwordConfirm) e.passwordConfirm = E.passwordMatch;
+    } else if (s === "project") {
+      if (selectedTypes.length === 0) e.projectType = E.projectType;
+    } else if (s === "description") {
+      if (form.description.trim().length < 10) e.description = E.description;
     }
+    return e;
   }
 
   const stepIdx = STEPS.indexOf(step);
@@ -119,13 +142,31 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
   }
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
     if (step !== "review") {
-      e.preventDefault();
-      if (canAdvance()) goNext();
+      const errs = validateStep(step);
+      setStepErrors(errs);
+      if (Object.keys(errs).length === 0) goNext();
       return;
     }
-    // submit: build FormData with photos
-    e.preventDefault();
+    // Final submit: re-validate every step that has rules.
+    const allErrs = {
+      ...validateStep("contact"),
+      ...validateStep("project"),
+      ...validateStep("description"),
+    };
+    if (Object.keys(allErrs).length > 0) {
+      setStepErrors(allErrs);
+      if (allErrs.fullName || allErrs.email || allErrs.password || allErrs.passwordConfirm) {
+        setStep("contact");
+      } else if (allErrs.projectType) {
+        setStep("project");
+      } else {
+        setStep("description");
+      }
+      return;
+    }
+    // build FormData with photos
     const fd = new FormData();
     fd.append("locale", locale);
     fd.append("projectType", selectedTypes.join(","));
@@ -134,8 +175,16 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
     formAction(fd);
   }
 
-  const fieldError = (k: string) =>
-    state.status === "error" && state.fieldErrors?.[k]?.[0];
+  // Password server errors are raw codes (exists/create_failed); surface those
+  // through the banner + login link instead of as a field-level message.
+  const PASSWORD_FIELDS = new Set(["password", "passwordConfirm"]);
+  const fieldError = (k: string): string | undefined => {
+    if (stepErrors[k]) return stepErrors[k];
+    if (PASSWORD_FIELDS.has(k)) return undefined;
+    return (state.status === "error" && state.fieldErrors?.[k]?.[0]) || undefined;
+  };
+  const accountExists =
+    state.status === "error" && Boolean(state.fieldErrors?.password?.includes("exists"));
 
   return (
     <form onSubmit={handleSubmit} className="space-y-6">
@@ -191,6 +240,12 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
               <p className="text-xs text-muted-foreground mt-0.5">
                 {labels.fields.accountHint}
               </p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {labels.alreadyHaveAccount}{" "}
+                <Link href="/login" className="underline font-medium text-foreground">
+                  {labels.errors.loginCta}
+                </Link>
+              </p>
             </div>
             <Field
               label={labels.fields.password}
@@ -199,7 +254,8 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
               value={form.password}
               onChange={(v) => update("password", v)}
               autoComplete="new-password"
-              error={fieldError("password")}
+              required
+              error={stepErrors.password}
             />
             <Field
               label={labels.fields.passwordConfirm}
@@ -208,7 +264,8 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
               value={form.passwordConfirm}
               onChange={(v) => update("passwordConfirm", v)}
               autoComplete="new-password"
-              error={fieldError("passwordConfirm")}
+              required
+              error={stepErrors.passwordConfirm}
             />
           </div>
         </div>
@@ -258,13 +315,19 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
                   <button
                     type="button"
                     key={t.value}
-                    onClick={() =>
+                    onClick={() => {
                       setSelectedTypes((prev) =>
                         prev.includes(t.value)
                           ? prev.filter((v) => v !== t.value)
                           : [...prev, t.value],
-                      )
-                    }
+                      );
+                      setStepErrors((e) => {
+                        if (!e.projectType) return e;
+                        const next = { ...e };
+                        delete next.projectType;
+                        return next;
+                      });
+                    }}
                     aria-pressed={active}
                     className={`px-3 py-3 rounded-md border text-sm font-medium transition ${
                       active
@@ -277,6 +340,9 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
                 );
               })}
             </div>
+            {fieldError("projectType") && (
+              <p className="text-xs text-destructive mt-2">{fieldError("projectType")}</p>
+            )}
           </div>
           <ChipGroup
             label={labels.fields.urgency}
@@ -440,7 +506,14 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
       )}
 
       {state.status === "error" && (
-        <p className="text-sm text-destructive">{state.message}</p>
+        <div className="text-sm text-destructive space-y-1">
+          <p>{state.message}</p>
+          {accountExists && (
+            <Link href="/login" className="underline font-medium inline-block">
+              {labels.errors.loginCta}
+            </Link>
+          )}
+        </div>
       )}
 
       <div className="flex justify-between pt-2">
@@ -454,7 +527,7 @@ export default function RequestForm({ locale, labels }: { locale: "fr" | "en"; l
         </button>
         <button
           type="submit"
-          disabled={!canAdvance() || pending}
+          disabled={pending}
           className="px-5 py-2 rounded-md bg-primary text-primary-foreground text-sm font-medium disabled:opacity-50"
         >
           {step === "review"

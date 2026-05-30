@@ -153,9 +153,19 @@ export default async function NouvelleDemandePage({
           propertyTypes,
           occupancyStatuses,
           preferredContacts,
+          alreadyHaveAccount: t("alreadyHaveAccount"),
           errors: {
             required: locale === "en" ? "Required" : "Requis",
             submit: locale === "en" ? "Could not submit" : "Échec de l'envoi",
+            fullName: t("errors.fullName"),
+            email: t("errors.email"),
+            passwordRequired: t("errors.passwordRequired"),
+            passwordMin: t("errors.passwordMin"),
+            passwordMatch: t("errors.passwordMatch"),
+            projectType: t("errors.projectType"),
+            description: t("errors.description"),
+            accountExists: t("errors.accountExists"),
+            loginCta: t("errors.loginCta"),
           },
         }}
       />

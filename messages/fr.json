@@ -44,10 +44,22 @@
       "approxArea": "Superficie approx. (pi²)",
       "approxAreaHint": "ex. 150",
       "optional": "facultatif",
-      "accountTitle": "Créer un compte client (facultatif)",
+      "accountTitle": "Créez votre compte client",
       "accountHint": "Choisissez un mot de passe pour suivre votre projet et échanger avec nous depuis votre espace client.",
       "password": "Mot de passe",
       "passwordConfirm": "Confirmer le mot de passe"
+    },
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "errors": {
+      "fullName": "Veuillez entrer votre nom complet.",
+      "email": "Veuillez entrer un courriel valide.",
+      "passwordRequired": "Veuillez choisir un mot de passe.",
+      "passwordMin": "Le mot de passe doit comporter au moins 8 caractères.",
+      "passwordMatch": "Les mots de passe ne correspondent pas.",
+      "projectType": "Veuillez sélectionner au moins un type de projet.",
+      "description": "Veuillez décrire votre projet (au moins 10 caractères).",
+      "accountExists": "Un compte existe déjà pour ce courriel. Connectez-vous pour soumettre votre demande.",
+      "loginCta": "Se connecter"
     }
   },
   "admin": {
